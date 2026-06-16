@@ -1,0 +1,28 @@
+[
+  {
+    "id": "1781608428250",
+    "name": "GENESIS",
+    "birthday": "01/01/2000",
+    "age": "26",
+    "email": "admin@gmail.com",
+    "contactNumber": "09171234567",
+    "password": "1234567890",
+    "photo": "Untitled design (11).png",
+    "cluster": "Alfonso Lista Cluster",
+    "church": "Alfonso Lista First UMC",
+    "createdAt": "2026-06-16T11:13:48.250Z"
+  },
+  {
+    "id": "1781609852666",
+    "name": "Kim Kardashian",
+    "birthday": "01/01/2001",
+    "age": "25",
+    "email": "kardashian@isied.com",
+    "contactNumber": "09000010002",
+    "password": "1234567890",
+    "photo": "Untitled design (5).png",
+    "cluster": "San Mateo Cluster",
+    "church": "Salinungan West UMC",
+    "createdAt": "2026-06-16T11:37:32.666Z"
+  }
+]
