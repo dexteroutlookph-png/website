@@ -1,40 +1,27 @@
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
+const { createClient } = require('@supabase/supabase-js');
 
 const dataFile = path.join(__dirname, '..', 'registrations.json');
-let pool = null;
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+let supabase = null;
 
-if (process.env.DATABASE_URL) {
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  (async () => {
-    try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS registrations (
-          id TEXT PRIMARY KEY,
-          name TEXT,
-          birthday TEXT,
-          age TEXT,
-          email TEXT,
-          contactNumber TEXT,
-          password TEXT,
-          photo TEXT,
-          cluster TEXT,
-          church TEXT,
-          createdAt TIMESTAMP
-        )
-      `);
-      console.log('Postgres connected and table ensured');
-    } catch (err) {
-      console.error('Failed to initialize Postgres table:', err);
-    }
-  })();
+if (SUPABASE_URL && SUPABASE_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log('Supabase client configured.');
+} else {
+  console.log('Supabase not configured; using local JSON storage.');
 }
 
 async function loadRegistrations() {
-  if (pool) {
-    const res = await pool.query('SELECT * FROM registrations ORDER BY createdAt DESC');
-    return res.rows;
+  if (supabase) {
+    const { data, error } = await supabase.from('registrations').select('*').order('createdAt', { ascending: false });
+    if (error) {
+      console.error('Supabase loadRegistrations error:', error);
+      return [];
+    }
+    return data || [];
   }
 
   try {
@@ -50,23 +37,12 @@ async function loadRegistrations() {
 }
 
 async function saveRegistration(registration) {
-  if (pool) {
-    const query = `INSERT INTO registrations(id, name, birthday, age, email, contactNumber, password, photo, cluster, church, createdAt)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`;
-    const values = [
-      registration.id,
-      registration.name,
-      registration.birthday,
-      registration.age,
-      registration.email,
-      registration.contactNumber,
-      registration.password,
-      registration.photo,
-      registration.cluster,
-      registration.church,
-      registration.createdAt,
-    ];
-    await pool.query(query, values);
+  if (supabase) {
+    const { error } = await supabase.from('registrations').insert([registration]);
+    if (error) {
+      console.error('Supabase saveRegistration error:', error);
+      throw error;
+    }
     return;
   }
 
@@ -76,9 +52,13 @@ async function saveRegistration(registration) {
 }
 
 async function updatePassword(id, password) {
-  if (pool) {
-    const result = await pool.query('UPDATE registrations SET password=$1 WHERE id=$2', [password, id]);
-    return result.rowCount > 0;
+  if (supabase) {
+    const { data, error } = await supabase.from('registrations').update({ password }).eq('id', id);
+    if (error) {
+      console.error('Supabase updatePassword error:', error);
+      return false;
+    }
+    return Array.isArray(data) ? data.length > 0 : !!data;
   }
 
   const registrations = await loadRegistrations();
