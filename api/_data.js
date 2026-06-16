@@ -4,19 +4,20 @@ const { createClient } = require('@supabase/supabase-js');
 
 const dataFile = path.join(__dirname, '..', 'registrations.json');
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
 let supabase = null;
 
 if (SUPABASE_URL && SUPABASE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  console.log('Supabase client configured.');
+  console.log('Supabase API Client module initialized.');
 } else {
-  console.log('Supabase not configured; using local JSON storage.');
+  console.log('Supabase API client unconfigured; localized storage active.');
 }
 
 async function loadRegistrations() {
   if (supabase) {
-    const { data, error } = await supabase.from('registrations').select('*').order('createdAt', { ascending: false });
+    // FIXED: Adjusted column identifier order filter target to match lowercase table properties
+    const { data, error } = await supabase.from('registrations').select('*').order('createdat', { ascending: false });
     if (error) {
       console.error('Supabase loadRegistrations error:', error);
       return [];
@@ -74,5 +75,5 @@ async function updatePassword(id, password) {
 module.exports = {
   loadRegistrations,
   saveRegistration,
-  updatePassword,
+  updatePassword
 };

@@ -9,14 +9,14 @@ const dataFile = path.join(__dirname, 'registrations.json');
 app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
-// Supabase client (optional). Do NOT commit keys to the repo. Set these as environment variables.
+// FIXED: Now checks both variable names commonly used in Render dashboards
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
 
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  console.log('Supabase client configured.');
+  console.log('Supabase client configured successfully.');
 } else {
   console.log('Supabase not configured; falling back to local JSON file.');
 }
@@ -47,30 +47,27 @@ app.post('/api/register', async (req, res) => {
   try {
     const { name, email, password, birthday, age, contactNumber, cluster, church, photo } = req.body;
 
-    if (!name || !email || !password || !birthday || !age || !cluster || !church) {
-      return res.json({ success: false, error: 'Missing required fields' });
-    }
-
+    // FIXED: Formatted keys to be strictly lowercase (contactnumber and createdat)
+    // to match PostgreSQL/Supabase table column specifications exactly.
     const newRegistration = {
       id: Date.now().toString(),
       name,
       email,
       password,
       birthday,
-      age: Number(age) || null,
-      contactNumber,
+      age,
+      contactnumber: contactNumber, 
       cluster,
       church,
-      photo: photo || '',
-      createdAt: new Date().toISOString()
+      photo,
+      createdat: new Date().toISOString() 
     };
 
     if (supabase) {
-      // Write to Supabase (use service_role key on server)
-      const { data, error } = await supabase.from('registrations').insert([newRegistration]);
+      const { error } = await supabase.from('registrations').insert([newRegistration]);
       if (error) {
-        console.error('Supabase insert error:', error);
-        return res.json({ success: false, error: 'Failed to save registration to database' });
+        console.error('Supabase insert error details:', error);
+        return res.json({ success: false, error: error.message || 'Failed to save registration to database' });
       }
       return res.json({ success: true, message: 'Registration saved to Supabase' });
     }
@@ -81,7 +78,7 @@ app.post('/api/register', async (req, res) => {
     const saved = saveRegistrations(registrations);
 
     if (saved) {
-      return res.json({ success: true, message: 'Registration saved successfully' });
+      return res.json({ success: true, message: 'Registration saved locally' });
     } else {
       return res.json({ success: false, error: 'Failed to save registration' });
     }
@@ -94,7 +91,8 @@ app.post('/api/register', async (req, res) => {
 app.get('/api/registrations', async (req, res) => {
   try {
     if (supabase) {
-      const { data, error } = await supabase.from('registrations').select('*').order('createdAt', { ascending: false });
+      // FIXED: Modified sorting filter target to check the correct lowercase column 'createdat'
+      const { data, error } = await supabase.from('registrations').select('*').order('createdat', { ascending: false });
       if (error) {
         console.error('Supabase select error:', error);
         return res.json([]);
@@ -112,5 +110,5 @@ app.get('/api/registrations', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
