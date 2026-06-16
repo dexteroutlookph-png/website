@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouthSphere | Login</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-logo">
+          <img src="isiedlogo.png" alt="ISIED logo" />
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
+      </header>
+
+      <main class="page-layout">
+        <section class="hero-panel">
+          <div>
+            <h1>
+              ISIED <span>YouthSphere</span>
+            </h1>
+            <p>
+              ISIED YouthSphere is a comprehensive web-based system designed to empower and engage the youth of the Isabela South Ifugao East District. It serves as a centralized platform for managing youth activities, events, and resources, fostering a vibrant community where young individuals can connect, learn, and grow together.  
+            </p>
+          </div>
+
+          <!-- Metrics removed to simplify the hero panel -->
+
+          <div class="hero-footer">
+            <span>© 2026 ISIED YouthSphere. All rights reserved.</span>
+          </div>
+        </section>
+
+        <section class="login-panel">
+          <div class="login-card">
+            <div class="login-header">
+              <h2>Welcome back</h2>
+              <p>Sign in to access the ISIED YouthSphere</p>
+            </div>
+
+            <form id="loginForm" class="login-form" action="#" method="post">
+              <label class="field-group">
+                <span>Email Address</span>
+                <input id="loginEmail" type="email" name="email" placeholder="you@example.com" required />
+              </label>
+              <label class="field-group">
+                <span>Password</span>
+                <input id="loginPassword" type="password" name="password" placeholder="Enter your password" required />
+              </label>
+
+              <div class="login-actions">
+                <a class="forgot-link" href="reset-password.html">Forgot Password?</a>
+              </div>
+
+              <div id="loginError" style="color:#b91c1c; min-height:18px; margin-bottom:10px"></div>
+
+              <button type="submit" class="primary-button">Sign In</button>
+            </form>
+
+            <p class="register-text">
+              Don't have an account? <a href="register.html">Register here</a>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      const loginForm = document.getElementById('loginForm');
+      const loginEmail = document.getElementById('loginEmail');
+      const loginPassword = document.getElementById('loginPassword');
+      const loginError = document.getElementById('loginError');
+
+      loginForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        loginError.textContent = '';
+        loginError.style.color = '#b91c1c';
+
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value.trim();
+
+        if (!email) {
+          loginError.textContent = 'Please enter your email address.';
+          return;
+        }
+
+        if (!password) {
+          loginError.textContent = 'Please enter your password.';
+          return;
+        }
+
+        fetch('/api/registrations')
+          .then(response => response.json())
+          .then((registrations) => {
+            const account = registrations.find((entry) => entry.email === email);
+            if (!account) {
+              loginError.innerHTML = `No account found with that email address. <a href="register.html" class="primary-button" style="display:inline-block; margin-left:10px;">Register</a>`;
+              return;
+            }
+            if (account.password !== password) {
+              loginError.innerHTML = `Incorrect password. <a href="reset-password.html" style="color:#2563eb; text-decoration:underline; margin-left:8px;">Reset password</a>`;
+              return;
+            }
+            loginError.style.color = '#16a34a';
+            loginError.textContent = 'Login successful. Redirecting...';
+            setTimeout(() => {
+              window.location.href = 'homepage.html';
+            }, 1000);
+          })
+          .catch(() => {
+            loginError.textContent = 'Unable to verify login at the moment. Please try again later.';
+          });
+      });
+    </script>
+  </body>
+</html>

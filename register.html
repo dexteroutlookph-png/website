@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register | YouthSphere</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-logo">
+          <img src="isiedlogo.png" alt="ISIED logo" />
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
+      </header>
+
+      <main class="page-layout single-column">
+        <section class="register-panel">
+          <div class="login-card">
+            <div class="login-header">
+              <h2>Create account</h2>
+              <p>Register to access the YouthSphere portal</p>
+            </div>
+
+            <form id="registerForm" class="login-form" action="#" method="post">
+              <label class="field-group avatar-upload">
+                <div class="avatar-wrapper">
+                  <img id="avatarPreview" class="avatar-preview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjwvc3ZnPg==" alt="avatar preview" />
+                  <div class="upload-overlay" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="upload-icon">
+                      <path d="M12 3v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M5 10l7-7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M21 21H3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <input id="photoInput" type="file" name="photo" accept="image/*" required />
+                </div>
+                <span>Upload Profile Photo</span>
+              </label>
+
+              <label class="field-group">
+                <span>Full name</span>
+                <input type="text" name="name" placeholder="Your full name" required />
+              </label>
+
+              <label class="field-group">
+                <span>Birthday</span>
+                <input id="birthday" name="birthday" type="text" placeholder="mm/dd/yyyy" pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" inputmode="numeric" autocapitalize="off" required autocomplete="bday" />
+              </label>
+
+              <label class="field-group">
+                <span>Age</span>
+                <input id="age" name="age" type="text" readonly placeholder="Age" />
+              </label>
+
+              <label class="field-group">
+                <span>Email</span>
+                <input type="email" name="email" placeholder="you@example.com" required />
+              </label>
+
+              <label class="field-group">
+                <span>Contact number</span>
+                <input id="contactNumber" type="tel" name="contactNumber" placeholder="09171234567" inputmode="numeric" pattern="\d{11}" required />
+              </label>
+
+              <label class="field-group">
+                <span>Password</span>
+                <input id="password" type="password" name="password" placeholder="Create a password" required />
+              </label>
+
+              <label class="field-group">
+                <span>Confirm password</span>
+                <input id="confirmPassword" type="password" name="confirmPassword" placeholder="Confirm your password" required />
+              </label>
+
+              <div id="formError" style="color:#b91c1c;min-height:18px"></div>
+
+              <button type="submit" class="primary-button">Next</button>
+            </form>
+
+            <p class="register-text">
+              Already have an account? <a href="index.html">Sign in</a>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // Preview selected profile photo
+      const photoInput = document.getElementById('photoInput');
+      const avatarPreview = document.getElementById('avatarPreview');
+      photoInput.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          avatarPreview.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const birthdayInput = document.getElementById('birthday');
+      const ageInput = document.getElementById('age');
+
+      function normalizeBirthdayInput(value) {
+        const digits = value.replace(/\D/g, '').slice(0, 8);
+        if (!digits) return '';
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+        return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      }
+
+      function parseBirthday(value) {
+        const parts = value.split('/').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return null;
+        const [month, day, year] = parts;
+        if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) return null;
+        const date = new Date(year, month - 1, day);
+        if (date.getMonth() !== month - 1 || date.getDate() !== day || date.getFullYear() !== year) return null;
+        return date;
+      }
+
+      function calculateAge(birthday) {
+        const today = new Date();
+        let age = today.getFullYear() - birthday.getFullYear();
+        const monthDiff = today.getMonth() - birthday.getMonth();
+        const dayDiff = today.getDate() - birthday.getDate();
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+          age -= 1;
+        }
+        return age;
+      }
+
+      birthdayInput.addEventListener('input', function () {
+        const maskedValue = normalizeBirthdayInput(this.value);
+        this.value = maskedValue;
+        const date = parseBirthday(maskedValue);
+        ageInput.value = date ? Math.max(0, calculateAge(date)) : '';
+      });
+
+      birthdayInput.addEventListener('blur', function () {
+        const value = this.value.replace(/\D/g, '');
+        if (!value) {
+          this.value = '';
+          ageInput.value = '';
+        }
+      });
+
+      document.getElementById('registerForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const pw = document.getElementById('password').value.trim();
+        const cpw = document.getElementById('confirmPassword').value.trim();
+        const errorEl = document.getElementById('formError');
+        errorEl.textContent = '';
+
+        const birthdayValue = birthdayInput.value.trim();
+        const birthdayDate = parseBirthday(birthdayValue);
+        const ageValue = ageInput.value.trim();
+
+        if (!birthdayValue || !birthdayDate) {
+          errorEl.textContent = 'Please enter a valid birthday in MM/DD/YYYY format.';
+          return;
+        }
+        if (!ageValue) {
+          errorEl.textContent = 'Birthday must produce a valid age.';
+          return;
+        }
+        const contactNumber = document.getElementById('contactNumber').value.trim();
+        const contactDigits = contactNumber.replace(/\D/g, '');
+        if (contactDigits.length !== 11) {
+          errorEl.textContent = 'Contact number must contain exactly 11 digits.';
+          return;
+        }
+        if (pw.length < 8) {
+          errorEl.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
+        if (pw !== cpw) {
+          errorEl.textContent = 'Passwords do not match.';
+          return;
+        }
+
+        const formData = {
+          name: document.querySelector('input[name="name"]').value.trim(),
+          birthday: birthdayValue,
+          age: ageValue,
+          email: document.querySelector('input[name="email"]').value.trim(),
+          contactNumber: document.getElementById('contactNumber').value.trim(),
+          password: pw,
+          photo: photoInput.files[0] ? photoInput.files[0].name : ''
+        };
+        localStorage.setItem('registrationStep1', JSON.stringify(formData));
+        window.location.href = 'register-step2.html';
+      });
+
+      const clusterSelect = document.getElementById('clusterSelect');
+      const churchSelect = document.getElementById('churchSelect');
+
+      const churchOptions = {
+        'Alfonso Lista Cluster': [
+          'Alfonso Lista First UMC',
+          'Bagong SIkat UMC',
+          'Namillangan UMC',
+          'San Quintin UMC',
+          'Sta. Maria MC',
+          'Zion UMC'
+        ],
+        'BRASO Cluster': [
+          'Burgos UMC',
+          'General Aguinaldo UMC',
+          'Oscariz UMC',
+          'Rising Hope MC',
+          'San Marcos UMC'
+        ],
+        'Cabatuan Cluster': [
+          'Cabatuan UMC',
+          'La Paz UMC',
+          'Namnama UMC',
+          'Tandul UMC'
+        ],
+        'Ramon Cluster': [
+          'Aldersgate UMC',
+          'Grace UMC',
+          'Ramon UMC',
+          'San Sebastian UMC',
+          'Wesley UMC'
+        ],
+        'San Mateo Cluster': [
+          'Gaddanan UMC',
+          'Salinungan East UMC',
+          'Salinungan West UMC',
+          'San Mateo UMC',
+          'The Crossroad UMC',
+          'Victoria MC'
+        ],
+        'VillaSS Cluster': [
+          'Sinamar Norte UMC',
+          'Sinamar Sur UMC',
+          'Villa Cruz UMC',
+          'Villa Fuerte UMC',
+          'Villa Magat UMC'
+        ]
+      };
+
+      clusterSelect.addEventListener('change', function () {
+        const selectedCluster = this.value;
+        const churches = churchOptions[selectedCluster] || [];
+        churchSelect.innerHTML = '<option value="" disabled selected>Select a local church</option>';
+        if (churches.length) {
+          churches.forEach(church => {
+            const option = document.createElement('option');
+            option.value = church;
+            option.textContent = church;
+            churchSelect.appendChild(option);
+          });
+          churchSelect.disabled = false;
+        } else {
+          churchSelect.disabled = true;
+        }
+      });
+    </script>
+  </body>
+</html>

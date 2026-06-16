@@ -1,0 +1,32 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run lint
+        run: echo "No lint configured"
+
+  deploy-to-railway:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Railway
+        uses: railwayapp/railway-deploy@v1
+        with:
+          service: '' # set your Railway project ID or leave empty to use RAILWAY_SERVICE_ID
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

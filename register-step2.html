@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register | YouthSphere</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-logo">
+          <img src="isiedlogo.png" alt="ISIED logo" />
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
+      </header>
+
+      <main class="page-layout single-column">
+        <section class="register-panel">
+          <div class="login-card">
+            <div class="login-header">
+              <h2>Complete your registration</h2>
+              <p>Select your cluster and local church to finish account setup</p>
+            </div>
+
+            <form id="step2Form" class="login-form" action="#" method="post">
+              <label class="field-group">
+                <span>Cluster</span>
+                <select id="clusterSelect" name="cluster" required>
+                  <option value="" disabled selected>Select a cluster</option>
+                  <option value="Alfonso Lista Cluster">Alfonso Lista Cluster</option>
+                  <option value="BRASO Cluster">BRASO Cluster</option>
+                  <option value="Cabatuan Cluster">Cabatuan Cluster</option>
+                  <option value="Ramon Cluster">Ramon Cluster</option>
+                  <option value="San Mateo Cluster">San Mateo Cluster</option>
+                  <option value="VillaSS Cluster">VillaSS Cluster</option>
+                </select>
+              </label>
+
+              <label class="field-group">
+                <span>Local Church</span>
+                <select id="churchSelect" name="church" required>
+                  <option value="" disabled selected>Select a local church</option>
+                </select>
+              </label>
+
+              <label class="field-group agreement-group">
+                <input id="agreeTerms" type="checkbox" name="agreeTerms" />
+                <span>I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>.</span>
+              </label>
+
+              <div id="formError" style="color:#b91c1c;min-height:18px"></div>
+
+              <button type="submit" class="primary-button">Finish Registration</button>
+            </form>
+
+            <p class="register-text">
+              Already have an account? <a href="index.html">Sign in</a>
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const clusterSelect = document.getElementById('clusterSelect');
+      const churchSelect = document.getElementById('churchSelect');
+      const agreeTerms = document.getElementById('agreeTerms');
+      const formError = document.getElementById('formError');
+
+      const churchOptions = {
+        'Alfonso Lista Cluster': [
+          'Alfonso Lista First UMC',
+          'Bagong Sikat UMC',
+          'Namillangan UMC',
+          'San Quintin UMC',
+          'Sta. Maria MC',
+          'Zion UMC'
+        ],
+        'BRASO Cluster': [
+          'Burgos UMC',
+          'General Aguinaldo UMC',
+          'Oscariz UMC',
+          'Rising Hope MC',
+          'San Marcos UMC'
+        ],
+        'Cabatuan Cluster': [
+          'Cabatuan UMC',
+          'La Paz UMC',
+          'Namnama UMC',
+          'Tandul UMC'
+        ],
+        'Ramon Cluster': [
+          'Aldersgate UMC',
+          'Grace UMC',
+          'Ramon UMC',
+          'San Sebastian UMC',
+          'Wesley UMC'
+        ],
+        'San Mateo Cluster': [
+          'Gaddanan UMC',
+          'Salinungan East UMC',
+          'Salinungan West UMC',
+          'San Mateo UMC',
+          'The Crossroad UMC',
+          'Victoria MC'
+        ],
+        'VillaSS Cluster': [
+          'Sinamar Norte UMC',
+          'Sinamar Sur UMC',
+          'Villa Cruz UMC',
+          'Villa Fuerte UMC',
+          'Villa Magat UMC'
+        ]
+      };
+
+      function fillChurchOptions(cluster) {
+        churchSelect.innerHTML = '<option value="" disabled selected>Select a local church</option>';
+        const churches = churchOptions[cluster] || [];
+        churches.forEach(church => {
+          const option = document.createElement('option');
+          option.value = church;
+          option.textContent = church;
+          churchSelect.appendChild(option);
+        });
+        churchSelect.disabled = churches.length === 0;
+      }
+
+      clusterSelect.addEventListener('change', function () {
+        fillChurchOptions(this.value);
+      });
+
+      document.getElementById('step2Form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        formError.textContent = '';
+
+        if (!clusterSelect.value) {
+          formError.textContent = 'Please choose a cluster.';
+          return;
+        }
+        if (!churchSelect.value) {
+          formError.textContent = 'Please choose a local church.';
+          return;
+        }
+        if (!agreeTerms.checked) {
+          formError.textContent = 'You must agree to the Terms of Service and Privacy Policy.';
+          return;
+        }
+
+        const step1Data = JSON.parse(localStorage.getItem('registrationStep1') || '{}');
+        if (!step1Data.name || !step1Data.email || !step1Data.password || !step1Data.birthday || !step1Data.age) {
+          window.location.href = 'register.html';
+          return;
+        }
+
+        const registrationData = {
+          ...step1Data,
+          cluster: clusterSelect.value,
+          church: churchSelect.value
+        };
+
+        fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(registrationData)
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (!result.success) {
+              formError.textContent = result.error || 'Registration failed.';
+              return;
+            }
+            localStorage.removeItem('registrationStep1');
+            formError.style.color = '#16a34a';
+            formError.textContent = 'Registration complete. Redirecting to login...';
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1200);
+          })
+          .catch(() => {
+            formError.textContent = 'Unable to save registration. Please try again later.';
+          });
+      });
+    </script>
+  </body>
+</html>

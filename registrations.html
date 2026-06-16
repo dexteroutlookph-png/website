@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Registered Accounts | YouthSphere</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-logo">
+          <img src="isiedlogo.png" alt="ISIED logo" />
+        </div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
+      </header>
+
+      <main class="page-layout single-column">
+        <section class="register-panel">
+          <div class="login-card">
+            <div class="login-header">
+              <h2>Registered Accounts</h2>
+              <p>All profiles stored in the repository-backed registry.</p>
+            </div>
+
+            <div id="listStatus" style="color:#475569; min-height:1.5rem; margin-bottom:18px;">
+              Loading registrations...
+            </div>
+            <div id="registrationsTable"></div>
+
+            <div style="margin-top:24px; text-align:center;">
+              <a class="primary-button" href="index.html" style="text-decoration:none; display:inline-block;">Back to sign in</a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const statusEl = document.getElementById('listStatus');
+      const tableContainer = document.getElementById('registrationsTable');
+
+      fetch('/api/registrations')
+        .then((response) => response.json())
+        .then((registrations) => {
+          if (!Array.isArray(registrations) || registrations.length === 0) {
+            statusEl.textContent = 'No registrations stored yet.';
+            return;
+          }
+
+          statusEl.textContent = '';
+
+          const table = document.createElement('table');
+          table.style.width = '100%';
+          table.style.borderCollapse = 'collapse';
+
+          const headerRow = document.createElement('tr');
+          ['Name', 'Birthday', 'Age', 'Email', 'Contact', 'Cluster', 'Local Church', 'Created'].forEach((heading) => {
+            const th = document.createElement('th');
+            th.textContent = heading;
+            th.style.padding = '12px 14px';
+            th.style.textAlign = 'left';
+            th.style.borderBottom = '1px solid #e2e8f0';
+            th.style.color = '#0f172a';
+            th.style.fontWeight = '700';
+            headerRow.appendChild(th);
+          });
+          table.appendChild(headerRow);
+
+          registrations.forEach((item) => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = '1px solid #e2e8f0';
+            [
+              item.name,
+              item.birthday,
+              item.age,
+              item.email,
+              item.contactNumber,
+              item.cluster,
+              item.church,
+              item.createdAt ? new Date(item.createdAt).toLocaleString() : ''
+            ].forEach((value) => {
+              const td = document.createElement('td');
+              td.textContent = value || '-';
+              td.style.padding = '12px 14px';
+              td.style.color = '#334155';
+              row.appendChild(td);
+            });
+            table.appendChild(row);
+          });
+
+          tableContainer.appendChild(table);
+        })
+        .catch(() => {
+          statusEl.textContent = 'Unable to load registrations.';
+        });
+    </script>
+  </body>
+</html>
