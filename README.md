@@ -20,18 +20,24 @@ This repository contains a static front-end and Vercel serverless API routes for
 - In production on Vercel, use a real Postgres database by setting `DATABASE_URL`.
 - Vercel serverless functions do not guarantee writable filesystem persistence, so file storage is only suitable for local testing.
 
-## Vercel deployment
+## Local development
 
-1. Push your code to GitHub.
-2. Go to `https://vercel.com` and create a new project.
-3. Select your GitHub repository.
-4. Set the project root to `project/`.
-5. Choose the framework preset: `Other` or `Node.js`.
-6. Build command: `npm install`
-7. Add environment variables:
-   - `SUPABASE_URL`: your Supabase project URL
-   - `SUPABASE_KEY`: your Supabase service role key
-8. Deploy the project.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the app locally:
+   ```bash
+   npm start
+   ```
+3. Open `http://localhost:3000` in your browser.
+
+## Environment variables
+
+Optionally set the following environment variables if you want the app to use Supabase instead of local JSON storage:
+
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
 
 ## Notes
 
