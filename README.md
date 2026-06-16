@@ -22,57 +22,19 @@ This repository contains a static front-end and Vercel serverless API routes for
 
 ## Vercel deployment
 
-This repo is configured for Vercel.
-
 1. Push your code to GitHub.
 2. Go to `https://vercel.com` and create a new project.
 3. Select your GitHub repository.
-4. Set the project root to `/`.
+4. Set the project root to `project/`.
 5. Choose the framework preset: `Other` or `Node.js`.
 6. Build command: `npm install`
-7. Output directory: leave blank
-8. Add environment variables:
-   - Key: `DATABASE_URL`
-   - Value: your Postgres connection string, e.g. `postgres://username:password@hostname:5432/database_name`
-9. Deploy the project.
-
-### Vercel test URLs
-
-- `https://<your-deployment>.vercel.app/index.html`
-- `https://<your-deployment>.vercel.app/register.html`
-- `https://<your-deployment>.vercel.app/register-step2.html`
-- `https://<your-deployment>.vercel.app/reset-password.html`
-- `https://<your-deployment>.vercel.app/registrations.html`
-- `https://<your-deployment>.vercel.app/api/registrations`
-
-### Vercel API routes
-
-- `/api/registrations` - read stored registrations
-- `/api/register` - create a new registration
-- `/api/reset-password` - update an existing password
+7. Add environment variables:
+   - `SUPABASE_URL`: your Supabase project URL
+   - `SUPABASE_KEY`: your Supabase service role key
+8. Deploy the project.
 
 ## Notes
 
 - `server.js` is used only for local development.
-- Production on Vercel uses the `/api` directory and `vercel.json`.
-- If you do not configure `DATABASE_URL`, the repo may still deploy, but registration writing will not be persistent.
-
-## Optional: Vercel CLI deploy
-
-```bash
-npm install -g vercel
-vercel login
-vercel
-```
-
-When prompted:
-- Project root: `.`
-- Framework preset: `Other` or `Node.js`
-- Build command: `npm install`
-- Output directory: leave blank
-
-Then deploy to production with:
-
-```bash
-vercel --prod
-```
+- Data is stored in Supabase PostgreSQL database when environment variables are set.
+- Fallback to `registrations.json` if Supabase is not configured.
