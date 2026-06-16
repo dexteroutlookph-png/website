@@ -33,15 +33,24 @@ Files added to help deploy:
 - `Dockerfile` — container image for the app.
 - `render.yaml` — an example Render service manifest (edit as needed).
 
-If you want, I can prepare a pull request with a Postgres-backed version and deployment steps using Render + managed Postgres.
-Alternatively, to deploy on Railway with a managed Postgres database I prepared changes that add Postgres support and a GitHub Actions workflow. Steps to finish deploy:
+## Deploy to Render (recommended for 24/7 hosting)
 
-1. Push this repo to GitHub.
-2. In GitHub repository settings, add a secret `RAILWAY_TOKEN` with your Railway API token.
-3. On Railway, create a new project and add the Postgres plugin (it will provide a `DATABASE_URL`).
-4. Connect GitHub – choose this repo and enable deploys for `main`.
-5. Optionally set the `RAILWAY_TOKEN` in GitHub Actions secrets and the `service` field in `.github/workflows/deploy.yml`.
+This repo includes Postgres support and a Dockerfile, ready to deploy on Render.
+
+1. **On Render.com**: Create a new account or sign in.
+2. **New Web Service**: 
+   - Click "New" → "Web Service".
+   - Connect GitHub and select this repo.
+   - Set build command to `npm install` and start command to `npm start`.
+   - Render will auto-detect `Dockerfile`; accept it or choose Node.js environment.
+3. **Add Postgres**:
+   - In Render dashboard, go to this service → "Environment".
+   - Click "Add Database" → "New PostgreSQL".
+   - Render will auto-populate `DATABASE_URL` in your environment.
+4. **Deploy**: Save and Render will auto-deploy. You'll get a free `*.onrender.com` subdomain.
+5. (Optional) Add a custom domain in Render dashboard → Domains and configure DNS at your registrar.
 
 Notes:
-- The workflow uses the `railwayapp/railway-deploy` action; follow Railway docs to generate a token.
-- After deploy, Railway will provide a free `*.up.railway.app` subdomain.
+- The app auto-migrates from file storage (`registrations.json`) to Postgres if `DATABASE_URL` is set.
+- Render's free tier provides limited resources; upgrade for production use.
+- After deploy, visit `https://your-app.onrender.com` to access your site.
