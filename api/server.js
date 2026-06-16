@@ -5,10 +5,12 @@ const register = require('./register');
 
 app.use(express.json());
 
+// TEST ROUTE
 app.get('/', (req, res) => {
   res.send('Server is working');
 });
 
+// POST ROUTE
 app.post('/register', register);
 
 const PORT = process.env.PORT || 3000;
