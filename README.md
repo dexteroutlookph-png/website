@@ -1,6 +1,6 @@
 # website
 
-This repository now includes a simple Node.js backend that stores every completed registration in `registrations.json`.
+This repository contains a static front-end and Vercel serverless API routes for registration, login, and password reset.
 
 ## Run locally
 
@@ -8,7 +8,7 @@ This repository now includes a simple Node.js backend that stores every complete
    ```bash
    npm install
    ```
-2. Start the server:
+2. Start the server locally:
    ```bash
    npm start
    ```
@@ -16,80 +16,63 @@ This repository now includes a simple Node.js backend that stores every complete
 
 ## Registration storage
 
-- Completed registration data is saved to `registrations.json`.
-- View stored profiles at `http://localhost:3000/registrations.html`.
+- In local development, registration data can be saved to `registrations.json`.
+- In production on Vercel, use a real Postgres database by setting `DATABASE_URL`.
+- Vercel serverless functions do not guarantee writable filesystem persistence, so file storage is only suitable for local testing.
 
-## Deploy (Render example)
+## Vercel deployment
 
-This repo can be deployed to Render for 24/7 hosting. Two options:
+This repo is configured for Vercel.
 
-- Quick (from GitHub): Create a new Web Service on Render, connect your GitHub repo, set the build command to `npm install` and start command to `npm start`. Expose port `3000` and add a Persistent Disk if you want `registrations.json` to survive deploys.
-- Docker (recommended for parity): Render also supports deploying via Docker. A `Dockerfile` is included — choose the Docker deploy option in Render.
+1. Push your code to GitHub.
+2. Go to `https://vercel.com` and create a new project.
+3. Select your GitHub repository.
+4. Set the project root to `/`.
+5. Choose the framework preset: `Other` or `Node.js`.
+6. Build command: `npm install`
+7. Output directory: leave blank
+8. Add environment variables:
+   - Key: `DATABASE_URL`
+   - Value: your Postgres connection string, e.g. `postgres://username:password@hostname:5432/database_name`
+9. Deploy the project.
 
-Important: storing registrations in `registrations.json` relies on writable persistent storage. For production use, switch to a proper database (Postgres, Supabase, etc.) and update `server.js` accordingly.
+### Vercel test URLs
 
-Files added to help deploy:
+- `https://<your-deployment>.vercel.app/index.html`
+- `https://<your-deployment>.vercel.app/register.html`
+- `https://<your-deployment>.vercel.app/register-step2.html`
+- `https://<your-deployment>.vercel.app/reset-password.html`
+- `https://<your-deployment>.vercel.app/registrations.html`
+- `https://<your-deployment>.vercel.app/api/registrations`
 
-- `Dockerfile` — container image for the app.
-- `render.yaml` — an example Render service manifest (edit as needed).
+### Vercel API routes
 
-## Deploy to Vercel
+- `/api/registrations` - read stored registrations
+- `/api/register` - create a new registration
+- `/api/reset-password` - update an existing password
 
-This repo can be deployed to Vercel with the backend converted to Vercel Serverless Functions.
+## Notes
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-2. **Create a Vercel project**:
-   - Connect your GitHub repo in Vercel.
-   - Vercel will detect the `vercel.json` file and use the API functions in `/api`.
-3. **Deploy**:
-   - Push your branch to GitHub.
-   - Vercel will build and deploy the project automatically.
+- `server.js` is used only for local development.
+- Production on Vercel uses the `/api` directory and `vercel.json`.
+- If you do not configure `DATABASE_URL`, the repo may still deploy, but registration writing will not be persistent.
 
-### Notes
-- API routes are now implemented as serverless functions under `/api`.
-- The site still serves static files from the repo root.
-- `registrations.json` is used when `DATABASE_URL` is not set, but Vercel ephemeral filesystem is not writable across invocations.
-- For production on Vercel, configure a real database by setting `DATABASE_URL` in the Vercel Environment Variables.
+## Optional: Vercel CLI deploy
 
-### Recommended Vercel setup
-- Add `DATABASE_URL` if you want persistent registration storage.
-- If no `DATABASE_URL` is configured, the API can still read registrations from `registrations.json`, but writing is not reliable in Vercel's serverless environment.
+```bash
+npm install -g vercel
+vercel login
+vercel
+```
 
-## Deploy to Render (recommended for stateful storage)
+When prompted:
+- Project root: `.`
+- Framework preset: `Other` or `Node.js`
+- Build command: `npm install`
+- Output directory: leave blank
 
-This repo can also be deployed to Render for 24/7 hosting. Two options:
+Then deploy to production with:
 
-- Quick (from GitHub): Create a new Web Service on Render, connect your GitHub repo, set the build command to `npm install` and start command to `npm start`. Expose port `3000` and add a Persistent Disk if you want `registrations.json` to survive deploys.
-- Docker (recommended for parity): Render also supports deploying via Docker. A `Dockerfile` is included — choose the Docker deploy option in Render.
-
-Important: storing registrations in `registrations.json` relies on writable persistent storage. For production use, switch to a proper database (Postgres, Supabase, etc.) and update `server.js` accordingly.
-
-Files added to help deploy:
-
-- `Dockerfile` — container image for the app.
-- `render.yaml` — an example Render service manifest (edit as needed).
-
-## Deploy to Render (recommended for 24/7 hosting)
-
-This repo includes Postgres support and a Dockerfile, ready to deploy on Render.
-
-1. **On Render.com**: Create a new account or sign in.
-2. **New Web Service**: 
-   - Click "New" → "Web Service".
-   - Connect GitHub and select this repo.
-   - Set build command to `npm install` and start command to `npm start`.
-   - Render will auto-detect `Dockerfile`; accept it or choose Node.js environment.
-3. **Add Postgres**:
-   - In Render dashboard, go to this service → "Environment".
-   - Click "Add Database" → "New PostgreSQL".
-   - Render will auto-populate `DATABASE_URL` in your environment.
-4. **Deploy**: Save and Render will auto-deploy. You'll get a free `*.onrender.com` subdomain.
-5. (Optional) Add a custom domain in Render dashboard → Domains and configure DNS at your registrar.
-
-Notes:
-- The app auto-migrates from file storage (`registrations.json`) to Postgres if `DATABASE_URL` is set.
-- Render's free tier provides limited resources; upgrade for production use.
-- After deploy, visit `https://your-app.onrender.com` to access your site.
+```bash
+vercel --prod
+```
