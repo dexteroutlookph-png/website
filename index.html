@@ -54,7 +54,7 @@
               </label>
 
               <div class="login-actions">
-                <a class="forgot-link" href="reset-password.html">Forgot Password?</a>
+                <a class="forgot-link" href="reset-password">Forgot Password?</a>
               </div>
 
               <div id="loginError" style="color:#b91c1c; min-height:18px; margin-bottom:10px"></div>
@@ -63,7 +63,7 @@
             </form>
 
             <p class="register-text">
-              Don't have an account? <a href="register.html">Register here</a>
+              Don't have an account? <a href="register">Register here</a>
             </p>
           </div>
         </section>
@@ -98,21 +98,21 @@
           .then((registrations) => {
             const account = registrations.find((entry) => entry.email === email);
             if (!account) {
-              loginError.innerHTML = `No account found with that email address. <a href="register.html" class="primary-button" style="display:inline-block; margin-left:10px;">Register</a>`;
+              loginError.innerHTML = `No account found with that email address. <a href="register" class="primary-button" style="display:inline-block; margin-left:10px;">Register</a>`;
               return;
             }
             if (account.password !== password) {
-              loginError.innerHTML = `Incorrect password. <a href="reset-password.html" style="color:#2563eb; text-decoration:underline; margin-left:8px;">Reset password</a>`;
+              loginError.innerHTML = `Incorrect password. <a href="reset-password" style="color:#2563eb; text-decoration:underline; margin-left:8px;">Reset password</a>`;
               return;
             }
             loginError.style.color = '#16a34a';
             loginError.textContent = 'Login successful. Redirecting...';
             setTimeout(() => {
-              window.location.href = 'homepage.html';
+              window.location.href = 'homepage';
             }, 1000);
           })
           .catch(() => {
-            loginError.textContent = 'Unable to verify login at the moment. Please try again later.';
+            loginError.textContent = 'Unable to verify login at the moment. Please try again later or try contacting the website owner.';
           });
       });
     </script>
