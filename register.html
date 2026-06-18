@@ -1,125 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouthSphere | Register</title>
-  <link rel="stylesheet" href="styles.css">
-  
-  <!-- CROPPER.JS STYLESHEET & SCRIPT ASSETS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-</head>
-<body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register | YouthSphere</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand-logo"><img src="isiedlogo.png" alt="ISIED logo" /></div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
+      </header>
 
-  <div class="form-container">
-    <h2>Create Account (Step 1)</h2>
-    <form id="step1Form">
-      <div class="input-group">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" required placeholder="John Doe">
-      </div>
-      <div class="input-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" required placeholder="johndoe@email.com">
-      </div>
-      <div class="input-group">
-        <label for="photo">Profile Photo</label>
-        <!-- Custom file trigger -->
-        <input type="file" id="photo" accept="image/*" required>
-      </div>
-      
-      <button type="submit" class="primary-button">Next Step</button>
-    </form>
-  </div>
+      <main class="page-layout single-column">
+        <section class="register-panel">
+          <div class="login-card">
+            <div class="login-header">
+              <h2>Create Profile (Step 1)</h2>
+              <p>Set up your login details and profile avatar</p>
+            </div>
 
-  <!-- INTERACTIVE 1:1 IMAGE CROPPING MODAL OVERLAY -->
-  <div id="cropModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:#1e293b; max-width:450px; width:100%; padding:20px; border-radius:16px; border:1px solid #334155; box-shadow:0 10px 25px rgba(0,0,0,0.3); font-family: sans-serif;">
-      <h3 style="margin-top:0; color:#fff;">Crop Profile Photo</h3>
-      <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:15px;">Please adjust your image boundaries into a clean square format.</p>
-      
-      <div style="max-height:300px; overflow:hidden; background:#0f172a; border-radius:8px; margin-bottom:20px;">
-        <img id="cropPreviewImage" style="max-width:100%; display:block;">
-      </div>
-      
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
-        <button type="button" id="cancelCropBtn" style="background:#475569; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer;">Cancel</button>
-        <button type="button" id="saveCropBtn" style="background:#4f46e5; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">Apply Crop</button>
+            <form id="registerForm" class="login-form">
+              <label class="field-group">
+                <span>Full Name</span>
+                <input type="text" id="regName" required placeholder="John Doe" />
+              </label>
+              <label class="field-group">
+                <span>Email Address</span>
+                <input type="email" id="regEmail" required placeholder="you@example.com" />
+              </label>
+              <label class="field-group">
+                <span>Password</span>
+                <input type="password" id="regPassword" required placeholder="Minimum 8 characters" />
+              </label>
+              <label class="field-group">
+                <span>Birthday</span>
+                <input type="date" id="regBirthday" required />
+              </label>
+              <label class="field-group">
+                <span>Age</span>
+                <input type="number" id="regAge" required min="1" max="110" />
+              </label>
+              <label class="field-group">
+                <span>Contact Number</span>
+                <input type="text" id="regContact" required placeholder="09123456789" />
+              </label>
+              <label class="field-group">
+                <span>Profile Photo (1:1 Aspect Ratio Preview)</span>
+                <input type="file" id="photoInput" accept="image/*" required />
+              </label>
+
+              <div id="step1Error" style="color:#b91c1c; min-height:18px; margin-bottom:10px; font-size:0.9rem;"></div>
+              <button type="submit" class="primary-button">Continue to Step 2</button>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="cropModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+      <div style="background:#1e293b; max-width:450px; width:100%; padding:20px; border-radius:16px; border:1px solid #334155; box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+        <h3 style="margin-top:0; color:#fff;">Crop Profile Photo</h3>
+        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:15px;">Adjust your image framing to form a perfect square.</p>
+        <div style="max-height:300px; overflow:hidden; background:#0f172a; border-radius:8px; margin-bottom:20px;">
+          <img id="cropPreviewImage" style="max-width:100%; display:block;">
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" id="cancelCropBtn" style="background:#475569; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer;">Cancel</button>
+          <button type="button" id="saveCropBtn" style="background:#4f46e5; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">Apply Crop</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script>
-    let cropperInstance = null;
-    let base64CroppedImage = "";
+    <script>
+      let cropperInstance = null;
+      let base64CroppedImage = "";
 
-    const form = document.getElementById('step1Form');
-    const photoInput = document.getElementById('photo');
-    const cropModal = document.getElementById('cropModal');
-    const cropPreviewImage = document.getElementById('cropPreviewImage');
-    const saveCropBtn = document.getElementById('saveCropBtn');
-    const cancelCropBtn = document.getElementById('cancelCropBtn');
+      const form = document.getElementById('registerForm');
+      const photoInput = document.getElementById('photoInput');
+      const cropModal = document.getElementById('cropModal');
+      const cropPreviewImage = document.getElementById('cropPreviewImage');
+      const saveCropBtn = document.getElementById('saveCropBtn');
+      const cancelCropBtn = document.getElementById('cancelCropBtn');
+      const errorEl = document.getElementById('step1Error');
 
-    // 1. Listen for image changes and trigger modal workspace
-    photoInput.addEventListener('change', function(e) {
-      const files = e.target.files;
-      if (files && files.length > 0) {
-        const file = files[0];
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          cropPreviewImage.src = event.target.result;
-          cropModal.style.display = 'flex';
-          
-          if (cropperInstance) cropperInstance.destroy();
-          
-          cropperInstance = new Cropper(cropPreviewImage, {
-            aspectRatio: 1, // FORCES SQUARE 1:1 RATIO
-            viewMode: 1,
-            background: false,
-            autoCropArea: 1
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+      photoInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+          const file = files[0];
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            cropPreviewImage.src = event.target.result;
+            cropModal.style.display = 'flex';
+            if (cropperInstance) cropperInstance.destroy();
+            cropperInstance = new Cropper(cropPreviewImage, {
+              aspectRatio: 1, // STRICT 1:1 RATIO
+              viewMode: 1,
+              background: false,
+              autoCropArea: 1
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
 
-    // 2. Process Cropped image to Base64 
-    saveCropBtn.addEventListener('click', function() {
-      if (cropperInstance) {
-        const canvas = cropperInstance.getCroppedCanvas({ width: 400, height: 400 });
-        base64CroppedImage = canvas.toDataURL('image/jpeg', 0.85);
+      saveCropBtn.addEventListener('click', function() {
+        if (cropperInstance) {
+          const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
+          base64CroppedImage = canvas.toDataURL('image/jpeg', 0.8);
+          cropModal.style.display = 'none';
+          localStorage.setItem('croppedProfilePhoto', base64CroppedImage);
+        }
+      });
+
+      cancelCropBtn.addEventListener('click', function() {
         cropModal.style.display = 'none';
-        
-        // Temporarily hold image string on user machine
-        localStorage.setItem('croppedProfilePhoto', base64CroppedImage);
-      }
-    });
+        photoInput.value = "";
+        if (cropperInstance) cropperInstance.destroy();
+      });
 
-    // 3. Graceful cancel handling
-    cancelCropBtn.addEventListener('click', function() {
-      cropModal.style.display = 'none';
-      photoInput.value = "";
-      if (cropperInstance) cropperInstance.destroy();
-    });
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        errorEl.textContent = '';
 
-    // 4. Handle navigation forward
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      if (!localStorage.getItem('croppedProfilePhoto')) {
-        alert("Please make sure to apply your profile image cropping settings first!");
-        return;
-      }
+        if (!localStorage.getItem('croppedProfilePhoto')) {
+          errorEl.textContent = 'Please frame your image and click "Apply Crop" first.';
+          return;
+        }
 
-      const basicInfo = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value
-      };
+        const formData = {
+          name: document.getElementById('regName').value.trim(),
+          email: document.getElementById('regEmail').value.trim(),
+          password: document.getElementById('regPassword').value,
+          birthday: document.getElementById('regBirthday').value,
+          age: parseInt(document.getElementById('regAge').value),
+          contactnumber: document.getElementById('regContact').value.trim()
+        };
 
-      localStorage.setItem('registrationStep1', JSON.stringify(basicInfo));
-      window.location.href = '/register-step2'; // Smooth navigation route redirection
-    });
-  </script>
-</body>
+        localStorage.setItem('registrationStep1', JSON.stringify(formData));
+        window.location.href = '/register-step2';
+      });
+    </script>
+  </body>
 </html>
