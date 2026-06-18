@@ -17,6 +17,7 @@
         margin-bottom: 24px;
         padding-bottom: 16px;
         border-bottom: 1px solid #334155;
+        width: 100%;
       }
 
       .avatar-trigger-circle {
@@ -34,10 +35,49 @@
         transition: all 0.2s ease;
       }
 
-      .avatar-trigger-circle:hover {
-        border-color: #6366f1;
-        background: #cbd5e1;
+      /* Inline Workspace container */
+      .inline-crop-workspace {
+        display: none;
+        width: 100%;
+        max-width: 300px;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
       }
+
+      .inline-crop-area {
+        width: 100%;
+        height: 250px; 
+        min-height: 250px;
+        background: #0f172a;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .inline-crop-area img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .crop-btn-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .inline-action-btn {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .inline-save { background: #4f46e5; color: #fff; }
+      .inline-cancel { background: #475569; color: #fff; }
 
       /* SVG Upload Symbol Arrow Inside Circle */
       .upload-symbol {
@@ -50,6 +90,11 @@
         stroke-linejoin: round;
         transition: stroke 0.2s ease;
         display: block;
+      }
+
+      .avatar-trigger-circle:hover {
+        border-color: #6366f1;
+        background: #cbd5e1;
       }
 
       .avatar-trigger-circle:hover .upload-symbol {
@@ -89,7 +134,6 @@
         opacity: 1 !important;
       }
 
-      /* Styled container context for inline ghost letters */
       #regBirthday {
         font-family: monospace;
         letter-spacing: 1px;
@@ -113,14 +157,24 @@
             <form id="registerForm" class="login-form">
               
               <div class="avatar-upload-container">
-                <div class="avatar-trigger-circle" onclick="document.getElementById('photoInput').click()">
+                <div id="circleTrigger" class="avatar-trigger-circle" onclick="document.getElementById('photoInput').click()">
                   <svg id="uploadIconSymbol" class="upload-symbol" viewBox="0 0 24 24">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                   </svg>
                   <img id="avatarDisplayCircle" class="avatar-preview-img" alt="Profile Preview">
                 </div>
-                <div class="avatar-label-text">Select YouthSphere Photo</div>
-                
+
+                <div id="inlineCropWorkspace" class="inline-crop-workspace">
+                  <div class="inline-crop-area">
+                    <img id="cropTargetImage" alt="To Crop">
+                  </div>
+                  <div class="crop-btn-row">
+                    <button type="button" id="inlineCancelBtn" class="inline-action-btn inline-cancel">Cancel</button>
+                    <button type="button" id="inlineSaveBtn" class="inline-action-btn inline-save">Save</button>
+                  </div>
+                </div>
+
+                <div id="avatarLabel" class="avatar-label-text">Select YouthSphere Photo</div>
                 <input type="file" id="photoInput" class="hidden-file-input" accept="image/*" />
               </div>
 
@@ -139,65 +193,75 @@
       </main>
     </div>
 
-    <div id="cropModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-      <div style="background:#1e293b; max-width:450px; width:100%; padding:20px; border-radius:16px;">
-        <div style="max-height:300px; overflow:hidden; background:#0f172a; margin-bottom:20px;">
-          <img id="cropPreviewImage" style="max-width:100%;">
-        </div>
-        <div style="display:flex; gap:10px; justify-content:flex-end;">
-          <button type="button" id="cancelCropBtn" style="background:#475569; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer;">Cancel</button>
-          <button type="button" id="saveCropBtn" style="background:#4f46e5; color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">Apply Crop</button>
-        </div>
-      </div>
-    </div>
-
     <script>
       let cropper = null;
-      
-      // File selector logic mapping events to popup preview canvas elements
-      document.getElementById('photoInput').addEventListener('change', function(e) {
+      const circleTrigger = document.getElementById('circleTrigger');
+      const inlineWorkspace = document.getElementById('inlineCropWorkspace');
+      const cropTargetImage = document.getElementById('cropTargetImage');
+      const uploadIconSymbol = document.getElementById('uploadIconSymbol');
+      const avatarDisplayCircle = document.getElementById('avatarDisplayCircle');
+      const avatarLabel = document.getElementById('avatarLabel');
+      const photoInput = document.getElementById('photoInput');
+
+      // 1. Image selection setup logic
+      photoInput.addEventListener('change', function(e) {
         if (e.target.files && e.target.files.length > 0) {
           const reader = new FileReader();
           reader.onload = function(event) {
-            document.getElementById('cropPreviewImage').src = event.target.result;
-            document.getElementById('cropModal').style.display = 'flex';
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(document.getElementById('cropPreviewImage'), { 
+            if (cropper) {
+              cropper.destroy();
+              cropper = null;
+            }
+
+            cropTargetImage.src = event.target.result;
+            
+            circleTrigger.style.display = 'none';
+            avatarLabel.style.display = 'none';
+            inlineWorkspace.style.display = 'flex';
+
+            cropper = new Cropper(cropTargetImage, { 
               aspectRatio: 1, 
-              viewMode: 1 
+              viewMode: 1,
+              autoCropArea: 1,
+              responsive: true,
+              checkOrientation: false
             });
           };
           reader.readAsDataURL(e.target.files[0]);
         }
       });
 
-      // Processing and caching the square avatar blob
-      document.getElementById('saveCropBtn').addEventListener('click', function() {
+      // 2. Crop Save Action
+      document.getElementById('inlineSaveBtn').addEventListener('click', function() {
         if (cropper) {
           const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
           const base64Image = canvas.toDataURL('image/jpeg', 0.8);
           
           localStorage.setItem('croppedProfilePhoto', base64Image);
           
-          document.getElementById('uploadIconSymbol').style.display = 'none';
-          
-          const displayImg = document.getElementById('avatarDisplayCircle');
-          displayImg.src = base64Image;
-          displayImg.style.display = 'block';
-          
           cropper.destroy();
           cropper = null;
-          document.getElementById('cropModal').style.display = 'none';
+
+          uploadIconSymbol.style.display = 'none';
+          avatarDisplayCircle.src = base64Image;
+          avatarDisplayCircle.style.display = 'block';
+          
+          inlineWorkspace.style.display = 'none';
+          circleTrigger.style.display = 'flex';
+          avatarLabel.style.display = 'block';
         }
       });
 
-      document.getElementById('cancelCropBtn').addEventListener('click', function() {
+      // 3. Crop Cancel Action
+      document.getElementById('inlineCancelBtn').addEventListener('click', function() {
         if (cropper) {
           cropper.destroy();
           cropper = null;
         }
-        document.getElementById('cropModal').style.display = 'none';
-        document.getElementById('photoInput').value = "";
+        inlineWorkspace.style.display = 'none';
+        circleTrigger.style.display = 'flex';
+        avatarLabel.style.display = 'block';
+        photoInput.value = "";
       });
 
       // Interactive Fixed Masking Engine for mm/dd/yyyy
@@ -205,10 +269,8 @@
       const ageInput = document.getElementById('regAge');
       const maskPattern = "mm/dd/yyyy";
 
-      // Set baseline text state
       birthdayInput.value = maskPattern;
 
-      // Retain tracking cursor positioning rules flawlessly
       birthdayInput.addEventListener('click', function() {
         const val = birthdayInput.value;
         const index = val.search(/[mdy]/);
@@ -223,11 +285,102 @@
         const allowedNavigation = ['ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Delete'];
         if (allowedNavigation.includes(e.key)) return;
 
-        // Block everything that isn't a baseline number or Backspace
         if (!/^\d$/.test(e.key) && e.key !== 'Backspace') {
           e.preventDefault();
           return;
         }
 
         e.preventDefault();
-        let currentArr = birthdayInput
+        let currentArr = birthdayInput.value.split('');
+        let cursor = birthdayInput.selectionStart;
+
+        if (/^\d$/.test(e.key)) {
+          if (cursor === 2 || cursor === 5) {
+            cursor++;
+          }
+          
+          if (cursor < 10) {
+            currentArr[cursor] = e.key;
+            birthdayInput.value = currentArr.join('');
+            
+            let nextCursor = cursor + 1;
+            if (nextCursor === 2 || nextCursor === 5) {
+              nextCursor++;
+            }
+            birthdayInput.setSelectionRange(nextCursor, nextCursor);
+            triggerAgeCalculation();
+          }
+        } else if (e.key === 'Backspace') {
+          if (cursor === 3 || cursor === 6) {
+            cursor--;
+          }
+          
+          if (cursor > 0) {
+            currentArr[cursor - 1] = maskPattern[cursor - 1];
+            birthdayInput.value = currentArr.join('');
+            birthdayInput.setSelectionRange(cursor - 1, cursor - 1);
+            triggerAgeCalculation();
+          }
+        }
+      });
+
+      function triggerAgeCalculation() {
+        const currentString = birthdayInput.value;
+        
+        // Extract numbers and slashes to figure out typed components
+        const parts = currentString.split('/');
+        const monthStr = parts[0];
+        const dayStr = parts[1];
+        const yearStr = parts[2];
+
+        // Check if year section has started receiving numeric digits
+        if (!/[y]/.test(yearStr)) {
+          const month = parseInt(monthStr, 10);
+          const day = parseInt(dayStr, 10);
+          const year = parseInt(yearStr, 10);
+
+          if (year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            const birthDate = new Date(year, month - 1, day);
+            const today = new Date();
+
+            if (birthDate.getFullYear() === year && birthDate.getMonth() === month - 1 && birthDate.getDate() === day && birthDate <= today) {
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const monthDiff = today.getMonth() - birthDate.getMonth();
+              
+              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              ageInput.value = age;
+              document.getElementById('step1Error').textContent = '';
+              return;
+            }
+          }
+        }
+        ageInput.value = '';
+      }
+
+      document.getElementById('registerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!localStorage.getItem('croppedProfilePhoto')) {
+          document.getElementById('step1Error').textContent = 'Please select and crop your profile photo first.';
+          return;
+        }
+        if (!ageInput.value) {
+          document.getElementById('step1Error').textContent = 'Please enter a complete and valid birthday (mm/dd/yyyy).';
+          return;
+        }
+        
+        localStorage.setItem('registrationStep1', JSON.stringify({
+          name: document.getElementById('regName').value.trim(),
+          email: document.getElementById('regEmail').value.trim(),
+          password: document.getElementById('regPassword').value,
+          birthday: birthdayInput.value,
+          age: ageInput.value,
+          contactnumber: document.getElementById('regContact').value.trim()
+        }));
+        
+        window.location.href = 'register-step2.html';
+      });
+    </script>
+  </body>
+</html>
