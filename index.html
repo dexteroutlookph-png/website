@@ -92,13 +92,6 @@
         }
       });
 
-      // 3. PERSISTENCE CHECK: If they are already signed in from a past window session, skip login completely
-      window.addEventListener('load', async () => {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-          window.location.href = 'homepage.html';
-        }
-      });
     </script>
   </body>
 </html>
