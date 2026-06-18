@@ -20,6 +20,38 @@
         color: #94a3b8;
         line-height: 1.4;
       }
+
+      /* Privacy Checkbox Styles */
+      .policy-checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 16px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .policy-checkbox-group input {
+        margin-top: 3px;
+        cursor: pointer;
+      }
+
+      .policy-text {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.4;
+      }
+
+      .policy-text a {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .policy-text a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
@@ -62,6 +94,13 @@
                 </select>
               </label>
 
+              <label class="policy-checkbox-group">
+                <input type="checkbox" id="regPrivacy" required />
+                <span class="policy-text">
+                  I agree to the <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a> of YouthSphere.
+                </span>
+              </label>
+
               <div id="step2Error" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
               <button type="submit" class="primary-button">Continue</button>
             </form>
@@ -72,8 +111,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      // Insert your initialized configuration here if it is not in styles.css / imported script files:
-      // const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+      // CRITICAL FIX: You MUST replace these placeholder strings with your actual Supabase Project details.
+      const SUPABASE_URL = 'https://qymolbzmovnbiybpktqx.supabase.co'; 
+      const SUPABASE_ANON_KEY = 'sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf';
+      
+      // Initializing the global client instance cleanly
+      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Alphabetically organized lookup registry data map
       const churchData = {
@@ -124,6 +167,7 @@
 
       const clusterSelect = document.getElementById('regCluster');
       const churchSelect = document.getElementById('regChurch');
+      const privacyCheck = document.getElementById('regPrivacy');
       const errorDisplay = document.getElementById('step2Error');
 
       // Dynamic update filtering implementation
@@ -145,7 +189,6 @@
         }
       });
 
-      // OVERHAULED SUBMISSION ROUTINE: Pushes payload directly into Supabase backend
       document.getElementById('registerFormStep2').addEventListener('submit', async function(e) {
         e.preventDefault();
         errorDisplay.textContent = ''; 
@@ -158,12 +201,17 @@
           return;
         }
 
-        // Retrieve compiled components from first step processing window
+        // Check validation status of privacy element explicitly
+        if (!privacyCheck.checked) {
+          errorDisplay.textContent = 'You must accept the Terms and Privacy Policy to continue.';
+          return;
+        }
+
         const step1Data = JSON.parse(localStorage.getItem('registrationStep1'));
         const base64Avatar = localStorage.getItem('croppedProfilePhoto');
 
         if (!step1Data) {
-          errorDisplay.textContent = 'Registration session expired. Please restart from step 1.';
+          errorDisplay.textContent = 'Registration session expired.';
           return;
         }
 
