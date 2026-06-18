@@ -8,69 +8,51 @@
   <style>
     body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; }
     .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; }
-    
-    /* Sticky Top Header */
     .app-header { position: sticky; top: 0; background: rgba(7, 20, 38, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100; padding: 16px; text-align: center; border-bottom: 1px solid #1e293b; }
-    .app-header h2 { margin: 0; font-size: 1.3rem; color: #fff; font-weight: 700; letter-spacing: -0.5px; }
-    
-    /* Minimal Threads-Style 3-Button Nav Bar */
-    .threads-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid #1e293b; display: flex; justify-content: space-around; padding: 16px 0; z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,0.4); }
+    .app-header h2 { margin: 0; font-size: 1.3rem; color: #fff; font-weight: 700; }
+    .threads-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid #1e293b; display: flex; justify-content: space-around; padding: 16px 0; z-index: 200; }
     .nav-item { background: none; border: none; color: #64748b; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 32px; border-radius: 20px; transition: all 0.2s ease; }
-    .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-item:hover { color: #fff; }
     .nav-item.active { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-    
-    /* Dynamic View Panes */
     .app-view { display: none; padding: 16px; flex-grow: 1; }
     .app-view.active { display: block; animation: feedFadeIn 0.2s ease-out; }
     @keyframes feedFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* Cards Framework */
-    .thread-card, .ui-panel-card { background: #1e293b; padding: 18px; border-radius: 16px; margin-bottom: 14px; border: 1px solid #334155; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    
-    /* Threads Feed Styling */
+    .thread-card, .ui-panel-card { background: #1e293b; padding: 18px; border-radius: 16px; margin-bottom: 14px; border: 1px solid #334155; }
     .thread-header { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
     .thread-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #4338ca; border: 1.5px solid #4f46e5; }
     .thread-user { font-weight: 700; color: #fff; font-size: 0.95rem; }
     .thread-content { font-size: 1rem; color: #e2e8f0; line-height: 1.5; padding-left: 50px; word-break: break-word; }
-    
-    /* Integrated Inline Thread Composer at top of Feed */
     .inline-composer { background: #11192e; border: 1px solid #243249; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
     .composer-layout { display: flex; gap: 12px; }
     .composer-fields { flex-grow: 1; }
-    .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; font-family: inherit; }
+    .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; }
     .inline-composer textarea:focus { outline: none; }
     .composer-actions { display: flex; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
-    .composer-actions button { padding: 6px 18px; font-size: 0.85rem; height: auto; border-radius: 20px; font-weight: 700; }
-    
-    /* Events Panel UI */
+    .composer-actions button { padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; }
     .event-item { padding: 16px; border-bottom: 1px solid #334155; display: flex; gap: 16px; align-items: flex-start; }
     .event-item:last-child { border-bottom: none; }
     .event-date-badge { background: #4f46e5; color: #fff; padding: 8px; border-radius: 10px; text-align: center; min-width: 55px; font-weight: bold; }
-    .event-date-badge .day { font-size: 1.2rem; display: block; line-height: 1; }
+    .event-date-badge .day { font-size: 1.2rem; display: block; }
     .event-date-badge .month { font-size: 0.75rem; text-transform: uppercase; }
     .event-details h4 { margin: 0 0 4px 0; color: #fff; font-size: 1.1rem; }
-    .event-meta { font-size: 0.85rem; color: #94a3b8; margin-bottom: 4px; }
-
-    /* Profile Panel UI */
+    .event-meta { font-size: 0.85rem; color: #94a3b8; }
     .profile-hero { text-align: center; padding: 24px 0 12px; }
-    .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; box-shadow: 0 0 15px rgba(99,102,241,0.3); }
-    .profile-hero h2 { margin: 0 0 6px 0; color: #fff; font-size: 1.4rem; font-weight: 700; }
+    .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; }
+    .profile-hero h2 { margin: 0 0 6px 0; color: #fff; font-size: 1.4rem; }
     .profile-meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 4px; }
   </style>
 </head>
 <body>
 
   <div class="app-container">
-    <!-- App Bar header title tracking context -->
     <header class="app-header"><h2 id="viewTitle">Home Feed</h2></header>
 
-    <!-- 1. FEED STREAM VIEW -->
+    <!-- 1. THREAD FEED -->
     <main id="feedView" class="app-view active">
-      <!-- Embedded Micro Threads Composer -->
       <div class="inline-composer">
         <form id="inlineThreadForm">
           <div class="composer-layout">
-            <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User Profile">
+            <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User">
             <div class="composer-fields">
               <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread..." required></textarea>
             </div>
@@ -82,10 +64,7 @@
         <div id="inlinePostStatus" style="margin-top: 8px; font-size: 0.85rem; padding-left: 50px;"></div>
       </div>
 
-      <!-- Live Stream Timeline Posts -->
-      <div id="newsfeedStream">
-        <p style="color: #94a3b8; text-align: center; padding-top: 20px;">Syncing your feed...</p>
-      </div>
+      <div id="newsfeedStream"><p style="color: #94a3b8; text-align: center;">Syncing feed...</p></div>
     </main>
 
     <!-- 2. EVENTS PANEL VIEW -->
@@ -103,22 +82,21 @@
       </div>
     </section>
 
-    <!-- 3. SOCIAL ACCOUNT IDENTITY VIEW -->
+    <!-- 3. PROFILE PANEL -->
     <section id="profileView" class="app-view">
       <div class="ui-panel-card">
         <div class="profile-hero">
           <img class="large-avatar" id="profAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Avatar">
           <h2 id="profName">Loading Profile...</h2>
           <div class="profile-meta" id="profEmail">loading@email.com</div>
-          <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Assignment</div>
+          <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Details</div>
         </div>
-        <div style="border-top:1px solid #334155; padding-top:20px; text-align:center; margin-top:10px;">
-          <button onclick="logout()" class="primary-button" style="background:#ef4444; box-shadow:none; width:auto; padding:10px 24px; border-radius:20px;">Sign Out</button>
+        <div style="border-top:1px solid #334155; padding-top:20px; text-align:center;">
+          <button onclick="logout()" class="primary-button" style="background:#ef4444; width:auto; padding:10px 24px; border-radius:20px;">Sign Out</button>
         </div>
       </div>
     </section>
 
-    <!-- Refined 3-Item Global App Tab Navigation Workspace -->
     <nav class="threads-nav">
       <button class="nav-item active" onclick="switchView('feedView', 'Home Feed', this)">Feed</button>
       <button class="nav-item" onclick="switchView('eventsView', 'Events', this)">Events</button>
@@ -127,23 +105,19 @@
   </div>
 
   <script>
-    // 1. Load authenticated profile parameters from browser session memory
     const sessionData = localStorage.getItem('registrationStep1');
     const currentUser = sessionData ? JSON.parse(sessionData) : {
       name: "Anonymous User", email: "guest@isied.org", cluster: "Unassigned Cluster", church: "District General", photo: ""
     };
 
-    // Populate identity layers across user templates
     document.getElementById('profName').textContent = currentUser.name;
     document.getElementById('profEmail').textContent = currentUser.email;
     document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
-    
     if (currentUser.photo) {
       document.getElementById('profAvatar').src = currentUser.photo;
       document.getElementById('composerAvatar').src = currentUser.photo;
     }
 
-    // 2. Build global avatar lookups mapping users to images safely across posts
     let avatarMap = {};
     fetch('/api/registrations')
       .then(res => res.json())
@@ -152,19 +126,15 @@
         loadFeedStream(); 
       }).catch(() => loadFeedStream());
 
-    // 3. Application View Routing Logic
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      
       document.getElementById(viewId).classList.add('active');
       if (element) element.classList.add('active');
-      
       document.getElementById('viewTitle').textContent = title;
       if (viewId === 'feedView') loadFeedStream();
     }
 
-    // 4. Load & Render Threads Streams
     function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       fetch('/api/posts')
@@ -172,13 +142,12 @@
         .then(posts => {
           stream.innerHTML = '';
           if (posts.length === 0) {
-            stream.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top:40px; font-size:0.95rem;">No threads found in this district yet.</p>`;
+            stream.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top:40px;">No threads shared yet.</p>`;
             return;
           }
           posts.forEach(post => {
             const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
-            const emailKey = post.email ? post.email.toLowerCase() : '';
-            const avatarSrc = avatarMap[emailKey] || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+            const avatarSrc = avatarMap[post.email?.toLowerCase()] || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
             
             const card = document.createElement('div');
             card.className = 'thread-card';
@@ -195,12 +164,10 @@
             stream.appendChild(card);
           });
         })
-        .catch(() => { stream.innerHTML = `<p style="color:#ef4444; text-align:center; padding-top:20px;">Failed to compile feed stream payload.</p>`; });
+        .catch(() => { stream.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to pull feed.</p>`; });
     }
 
-    // 5. Submit New Thread Form Processing
-    const inlineForm = document.getElementById('inlineThreadForm');
-    inlineForm.addEventListener('submit', function(e) {
+    document.getElementById('inlineThreadForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const text = document.getElementById('inlineThreadContent');
       const status = document.getElementById('inlinePostStatus');
@@ -221,19 +188,14 @@
         if (res.success) {
           text.value = '';
           status.style.color = '#16a34a';
-          status.textContent = 'Thread shared successfully!';
+          status.textContent = 'Thread shared!';
           loadFeedStream();
           setTimeout(() => { status.textContent = ''; }, 2000);
         } else {
           status.style.color = '#ef4444';
-          status.textContent = res.error || 'Server rejected post data.';
+          status.textContent = res.error || 'Rejected.';
         }
-      })
-      .catch(() => {
-        btn.disabled = false;
-        status.style.color = '#ef4444';
-        status.textContent = 'Network communication failure error.';
-      });
+      }).catch(() => { btn.disabled = false; });
     });
 
     function logout() {

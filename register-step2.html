@@ -10,44 +10,36 @@
     <div class="page-shell">
       <header class="site-header">
         <div class="brand-logo"><img src="isiedlogo.png" alt="ISIED logo" /></div>
-        <div class="brand-copy">
-          <span class="brand-name">ISIED</span>
-          <span class="brand-subtext">Isabela South Ifugao East District</span>
-        </div>
+        <div class="brand-copy"><span class="brand-name">ISIED</span></div>
       </header>
 
       <main class="page-layout single-column">
         <section class="register-panel">
           <div class="login-card">
-            <div class="login-header">
-              <h2>Complete Profile (Step 2)</h2>
-              <p>Select your operational cluster location map</p>
-            </div>
-
+            <div class="login-header"><h2>Complete Profile (Step 2)</h2></div>
             <form id="step2Form" class="login-form">
               <label class="field-group">
-                <span>Cluster Assignment</span>
+                <span>Cluster</span>
                 <select id="clusterSelect" required>
-                  <option value="" disabled selected>Select a cluster</option>
+                  <option value="" disabled selected>Select cluster</option>
                   <option value="Alfonso Lista Cluster">Alfonso Lista Cluster</option>
                   <option value="BRASO Cluster">BRASO Cluster</option>
                   <option value="Cabatuan Cluster">Cabatuan Cluster</option>
                   <option value="San Mateo Cluster">San Mateo Cluster</option>
                 </select>
               </label>
-
               <label class="field-group">
-                <span>Local Church Station</span>
+                <span>Local Church</span>
                 <select id="churchSelect" required>
-                  <option value="" disabled selected>Select local church</option>
+                  <option value="" disabled selected>Select church</option>
                   <option value="Alfonso Lista First UMC">Alfonso Lista First UMC</option>
                   <option value="Salinungan West UMC">Salinungan West UMC</option>
                   <option value="District Central Church">District Central Church</option>
                 </select>
               </label>
 
-              <div id="formError" style="color:#b91c1c; min-height:18px; margin-bottom:10px; font-size:0.9rem;"></div>
-              <button type="submit" class="primary-button">Submit & Build Profile</button>
+              <div id="formError" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
+              <button type="submit" class="primary-button">Submit Profile</button>
             </form>
           </div>
         </section>
@@ -55,13 +47,8 @@
     </div>
 
     <script>
-      const form = document.getElementById('step2Form');
-      const formError = document.getElementById('formError');
-
-      form.addEventListener('submit', function(e) {
+      document.getElementById('step2Form').addEventListener('submit', function(e) {
         e.preventDefault();
-        formError.textContent = '';
-
         const step1Data = JSON.parse(localStorage.getItem('registrationStep1') || '{}');
         const photoString = localStorage.getItem('croppedProfilePhoto') || "";
 
@@ -70,13 +57,8 @@
           return;
         }
 
-        const registrationData = {
-          name: step1Data.name,
-          email: step1Data.email,
-          password: step1Data.password,
-          birthday: step1Data.birthday,
-          age: step1Data.age,
-          contactnumber: step1Data.contactnumber,
+        const payload = {
+          ...step1Data,
           cluster: document.getElementById('clusterSelect').value,
           church: document.getElementById('churchSelect').value,
           photo: photoString
@@ -85,22 +67,19 @@
         fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(registrationData)
+          body: JSON.stringify(payload)
         })
         .then(res => res.json())
-        .then(result => {
-          if (!result.success) {
-            formError.textContent = result.error || 'Database submission rejected.';
+        .then(res => {
+          if (!res.success) {
+            document.getElementById('formError').textContent = res.error || 'Failed registration submission profile.';
             return;
           }
           localStorage.removeItem('registrationStep1');
           localStorage.removeItem('croppedProfilePhoto');
-          
-          formError.style.color = '#16a34a';
-          formError.textContent = 'Account profile synchronized! Directing to login...';
-          setTimeout(() => { window.location.href = '/'; }, 1200);
+          window.location.href = '/';
         })
-        .catch(() => { formError.textContent = 'Network communication latency failure.'; });
+        .catch(() => { document.getElementById('formError').textContent = 'Network delivery failure error.'; });
       });
     </script>
   </body>

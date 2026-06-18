@@ -20,16 +20,15 @@
         <section class="hero-panel">
           <div>
             <h1>ISIED <span>YouthSphere</span></h1>
-            <p>A centralized social and dashboard engine designed to connect district church members, track upcoming events, and log cluster updates.</p>
+            <p>A centralized social engine built to connect district church members and track community updates.</p>
           </div>
-          <div class="hero-footer"><span>© 2026 ISIED YouthSphere.</span></div>
         </section>
 
         <section class="login-panel">
           <div class="login-card">
             <div class="login-header">
               <h2>Welcome Back</h2>
-              <p>Sign in to enter the feed portal</p>
+              <p>Sign in to enter your social feed</p>
             </div>
 
             <form id="loginForm" class="login-form">
@@ -45,7 +44,6 @@
               <div id="loginError" style="color:#b91c1c; min-height:18px; margin-bottom:12px; font-size:0.9rem;"></div>
               <button type="submit" class="primary-button">Sign In</button>
             </form>
-
             <p class="register-text">Don't have an account? <a href="/register">Register here</a></p>
           </div>
         </section>
@@ -53,46 +51,32 @@
     </div>
 
     <script>
-      const form = document.getElementById('loginForm');
-      const loginEmail = document.getElementById('loginEmail');
-      const loginPassword = document.getElementById('loginPassword');
-      const loginError = document.getElementById('loginError');
-
-      form.addEventListener('submit', function(e) {
+      document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        loginError.textContent = '';
+        const errorEl = document.getElementById('loginError');
+        errorEl.textContent = '';
 
-        const email = loginEmail.value.trim().toLowerCase();
-        const password = loginPassword.value;
+        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+        const password = document.getElementById('loginPassword').value;
 
         fetch('/api/registrations')
           .then(res => res.json())
           .then(users => {
             const match = users.find(u => u.email.toLowerCase() === email);
-            if (!match) {
-              loginError.innerHTML = `Account not found. <a href="/register" style="color:#6366f1; text-decoration:underline;">Register here</a>`;
-              return;
-            }
-            if (match.password !== password) {
-              loginError.textContent = 'Incorrect account credentials matching our records.';
+            if (!match || match.password !== password) {
+              errorEl.textContent = 'Invalid email or password parameters credentials.';
               return;
             }
 
-            // Bind global user identity safely for social access rules
             localStorage.setItem('registrationStep1', JSON.stringify({
-              name: match.name,
-              email: match.email,
-              cluster: match.cluster,
-              church: match.church,
-              photo: match.photo || ""
+              name: match.name, email: match.email, cluster: match.cluster, church: match.church, photo: match.photo || ""
             }));
 
-            loginError.style.color = '#16a34a';
-            loginError.textContent = 'Authentication validated! Syncing dashboard portal...';
-            
+            errorEl.style.color = '#16a34a';
+            errorEl.textContent = 'Verified! Accessing application feed...';
             setTimeout(() => { window.location.href = '/homepage'; }, 1000);
           })
-          .catch(() => { loginError.textContent = 'Failed to coordinate database connection logic pipelines.'; });
+          .catch(() => { errorEl.textContent = 'Could not process user pipeline request.'; });
       });
     </script>
   </body>
