@@ -370,10 +370,10 @@
           return;
         }
         
-        // Storing details safely in transition state cache to compile for Supabase in step 2
+        // FIX: Added .trim() to email and name inputs to avoid empty string space mismatches
         localStorage.setItem('registrationStep1', JSON.stringify({
           name: document.getElementById('regName').value.trim(),
-          email: document.getElementById('regEmail').value.trim(),
+          email: document.getElementById('regEmail').value.trim().toLowerCase(),
           password: document.getElementById('regPassword').value,
           birthday: birthdayInput.value,
           age: ageInput.value,

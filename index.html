@@ -50,33 +50,54 @@
       </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      document.getElementById('loginForm').addEventListener('submit', function(e) {
+      // 1. Initialize your specific project credentials cleanly
+      const SUPABASE_URL = 'https://qymolbzmovnbiybpktqx.supabase.co'; 
+      const SUPABASE_ANON_KEY = 'sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf';
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const loginForm = document.getElementById('loginForm');
+      const errorEl = document.getElementById('loginError');
+
+      // 2. Form submission handler linked to real Supabase auth engines
+      loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        const errorEl = document.getElementById('loginError');
+        errorEl.style.color = '#b91c1c';
         errorEl.textContent = '';
 
         const email = document.getElementById('loginEmail').value.trim().toLowerCase();
         const password = document.getElementById('loginPassword').value;
 
-        fetch('/api/registrations')
-          .then(res => res.json())
-          .then(users => {
-            const match = users.find(u => u.email.toLowerCase() === email);
-            if (!match || match.password !== password) {
-              errorEl.textContent = 'Invalid email or password.';
-              return;
-            }
+        try {
+          // Ask Supabase to verify if email and password are a correct pair
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
 
-            localStorage.setItem('registrationStep1', JSON.stringify({
-              name: match.name, email: match.email, cluster: match.cluster, church: match.church, photo: match.photo || ""
-            }));
+          if (error) throw error;
 
-            errorEl.style.color = '#16a34a';
-            errorEl.textContent = 'Verified! Accessing dashboard...';
-            setTimeout(() => { window.location.href = 'homepage.html'; }, 1000);
-          })
-          .catch(() => { errorEl.textContent = 'Could not process login pipeline.'; });
+          // Success indicators are safely processed here
+          errorEl.style.color = '#16a34a';
+          errorEl.textContent = 'Verified! Accessing dashboard...';
+          
+          setTimeout(() => { 
+            window.location.href = 'homepage.html'; 
+          }, 1000);
+
+        } catch (err) {
+          // If credentials are wrong, Supabase provides clear feedback like "Invalid login credentials"
+          errorEl.textContent = err.message || 'Invalid email or password.';
+        }
+      });
+
+      // 3. PERSISTENCE CHECK: If they are already signed in from a past window session, skip login completely
+      window.addEventListener('load', async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          window.location.href = 'homepage.html';
+        }
       });
     </script>
   </body>

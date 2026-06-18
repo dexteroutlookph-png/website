@@ -114,10 +114,8 @@
       const SUPABASE_URL = 'https://qymolbzmovnbiybpktqx.supabase.co'; 
       const SUPABASE_ANON_KEY = 'sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf';
       
-      // Clean variable initialization setup
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Alphabetically organized lookup registry data map
       const churchData = {
         "Alfonso Lista Cluster": [
           "Alfonso Lista First UMC",
@@ -169,7 +167,6 @@
       const privacyCheck = document.getElementById('regPrivacy');
       const errorDisplay = document.getElementById('step2Error');
 
-      // Dynamic update filtering implementation
       clusterSelect.addEventListener('change', function() {
         const selectedCluster = this.value;
         
@@ -200,7 +197,6 @@
           return;
         }
 
-        // Check validation status of privacy element explicitly
         if (!privacyCheck.checked) {
           errorDisplay.textContent = 'You must accept the Terms and Privacy Policy to continue.';
           return;
@@ -215,7 +211,7 @@
         }
 
         try {
-          // 1. Process identity registration details to Supabase Authentication engine
+          // 1. Register account inside Supabase identity schema
           const { data: authData, error: authError } = await supabaseClient.auth.signUp({
             email: step1Data.email,
             password: step1Data.password,
@@ -228,7 +224,7 @@
 
           if (authError) throw authError;
 
-          // 2. Insert complementary descriptive attributes directly into profiles dataset table
+          // 2. Map structural profile values linked directly to auth identifier string
           if (authData.user) {
             const { error: profileError } = await supabaseClient.from('profiles').insert([{
               id: authData.user.id,
@@ -244,11 +240,13 @@
             if (profileError) throw profileError;
           }
 
-          // 3. Clear transient local variables on successful database write completion
+          // 3. Clean transient processing properties out of state storage entirely
           localStorage.removeItem('registrationStep1');
           localStorage.removeItem('croppedProfilePhoto');
           
-          // Re-routed to the login view successfully
+          // FIX: Explicitly clear the auto-sign-in token so they can cleanly encounter index.html's form inputs 
+          await supabaseClient.auth.signOut();
+          
           window.location.href = 'index.html';
 
         } catch (err) {
