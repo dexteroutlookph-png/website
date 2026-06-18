@@ -70,7 +70,11 @@
       </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+      // Insert your initialized configuration here if it is not in styles.css / imported script files:
+      // const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
       // Alphabetically organized lookup registry data map
       const churchData = {
         "Alfonso Lista Cluster": [
@@ -120,12 +124,12 @@
 
       const clusterSelect = document.getElementById('regCluster');
       const churchSelect = document.getElementById('regChurch');
+      const errorDisplay = document.getElementById('step2Error');
 
       // Dynamic update filtering implementation
       clusterSelect.addEventListener('change', function() {
         const selectedCluster = this.value;
         
-        // Reset state cleanly
         churchSelect.innerHTML = '<option value="" disabled selected>Select Local Church</option>';
         
         if (churchData[selectedCluster]) {
@@ -141,27 +145,69 @@
         }
       });
 
-      document.getElementById('registerFormStep2').addEventListener('submit', function(e) {
+      // OVERHAULED SUBMISSION ROUTINE: Pushes payload directly into Supabase backend
+      document.getElementById('registerFormStep2').addEventListener('submit', async function(e) {
         e.preventDefault();
+        errorDisplay.textContent = ''; 
         
         const clusterVal = clusterSelect.value;
         const churchVal = churchSelect.value;
 
         if (!clusterVal || !churchVal) {
-          document.getElementById('step2Error').textContent = 'Please make a selection for both fields.';
+          errorDisplay.textContent = 'Please make a selection for both fields.';
           return;
         }
 
-        const step1Data = JSON.parse(localStorage.getItem('registrationStep1')) || {};
-        
-        const completedProfilePayload = {
-          ...step1Data,
-          cluster: clusterVal,
-          localChurch: churchVal
-        };
+        // Retrieve compiled components from first step processing window
+        const step1Data = JSON.parse(localStorage.getItem('registrationStep1'));
+        const base64Avatar = localStorage.getItem('croppedProfilePhoto');
 
-        localStorage.setItem('registrationComplete', JSON.stringify(completedProfilePayload));
-        window.location.href = 'index.html';
+        if (!step1Data) {
+          errorDisplay.textContent = 'Registration session expired. Please restart from step 1.';
+          return;
+        }
+
+        try {
+          // 1. Process identity registration details to Supabase Authentication engine
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: step1Data.email,
+            password: step1Data.password,
+            options: {
+              data: {
+                full_name: step1Data.name
+              }
+            }
+          });
+
+          if (authError) throw authError;
+
+          // 2. Insert complementary descriptive attributes directly into profiles dataset table
+          if (authData.user) {
+            const { error: profileError } = await supabase
+              .from('profiles') 
+              .insert([{
+                id: authData.user.id,
+                full_name: step1Data.name,
+                birthday: step1Data.birthday,
+                age: parseInt(step1Data.age, 10),
+                contact_number: step1Data.contactnumber,
+                cluster: clusterVal,
+                local_church: churchVal,
+                avatar_url: base64Avatar 
+              }]);
+
+            if (profileError) throw profileError;
+          }
+
+          // 3. Clear transient local variables on successful database write completion
+          localStorage.removeItem('registrationStep1');
+          localStorage.removeItem('croppedProfilePhoto');
+          
+          window.location.href = 'login.html';
+
+        } catch (err) {
+          errorDisplay.textContent = err.message || 'An error occurred during submission. Please try again.';
+        }
       });
     </script>
   </body>

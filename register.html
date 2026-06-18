@@ -370,6 +370,7 @@
           return;
         }
         
+        // Storing details safely in transition state cache to compile for Supabase in step 2
         localStorage.setItem('registrationStep1', JSON.stringify({
           name: document.getElementById('regName').value.trim(),
           email: document.getElementById('regEmail').value.trim(),
