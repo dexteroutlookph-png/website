@@ -46,18 +46,20 @@
                 <span>Cluster</span>
                 <select id="regCluster" required>
                   <option value="" disabled selected>Select Cluster</option>
-                  <option value="Cluster 1">Cluster 1</option>
-                  <option value="Cluster 2">Cluster 2</option>
-                  <option value="Cluster 3">Cluster 3</option>
-                  <option value="Cluster 4">Cluster 4</option>
+                  <option value="Alfonso Lista Cluster">Alfonso Lista Cluster</option>
+                  <option value="BRASO Cluster">BRASO Cluster</option>
+                  <option value="Cabatuan Cluster">Cabatuan Cluster</option>
+                  <option value="Ramon Cluster">Ramon Cluster</option>
+                  <option value="San Mateo Cluster">San Mateo Cluster</option>
+                  <option value="VillaSS Cluster">VillaSS Cluster</option>
                 </select>
               </label>
 
               <label class="field-group">
                 <span>Local Church</span>
-                <select id="regChurch" required>
+                <select id="regChurch" required disabled>
                   <option value="" disabled selected>Select Local Church</option>
-                  </select>
+                </select>
               </label>
 
               <div id="step2Error" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
@@ -69,18 +71,87 @@
     </div>
 
     <script>
+      // Alphabetically organized lookup registry data map
+      const churchData = {
+        "Alfonso Lista Cluster": [
+          "Alfonso Lista First UMC",
+          "Bagong Sikat UMC",
+          "Namillangan UMC",
+          "San Quintin UMC",
+          "Sta. Maria MC",
+          "Zion UMC"
+        ],
+        "BRASO Cluster": [
+          "Burgos UMC",
+          "General Aguinaldo UMC",
+          "Oscariz UMC",
+          "Rising Hope MC",
+          "San Marcos UMC"
+        ],
+        "Cabatuan Cluster": [
+          "Cabatuan UMC",
+          "La Paz UMC",
+          "Namnama UMC",
+          "Tandul UMC"
+        ],
+        "Ramon Cluster": [
+          "Aldersgate UMC",
+          "Grace UMC",
+          "Ramon UMC",
+          "San Sebastian UMC",
+          "Wesley UMC"
+        ],
+        "San Mateo Cluster": [
+          "Gaddanan UMC",
+          "Salinungan East UMC",
+          "Salinungan West UMC",
+          "San Mateo UMC",
+          "The Crossroad UMC",
+          "Victoria MC"
+        ],
+        "VillaSS Cluster": [
+          "Sinamar Norte UMC",
+          "Sinamar Sur UMC",
+          "Villa Cruz UMC",
+          "Villa Fuerte UMC",
+          "Villa Magat UMC"
+        ]
+      };
+
+      const clusterSelect = document.getElementById('regCluster');
+      const churchSelect = document.getElementById('regChurch');
+
+      // Dynamic update filtering implementation
+      clusterSelect.addEventListener('change', function() {
+        const selectedCluster = this.value;
+        
+        // Reset state cleanly
+        churchSelect.innerHTML = '<option value="" disabled selected>Select Local Church</option>';
+        
+        if (churchData[selectedCluster]) {
+          churchSelect.disabled = false;
+          churchData[selectedCluster].forEach(function(church) {
+            const option = document.createElement('option');
+            option.value = church;
+            option.textContent = church;
+            churchSelect.appendChild(option);
+          });
+        } else {
+          churchSelect.disabled = true;
+        }
+      });
+
       document.getElementById('registerFormStep2').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const clusterVal = document.getElementById('regCluster').value;
-        const churchVal = document.getElementById('regChurch').value;
+        const clusterVal = clusterSelect.value;
+        const churchVal = churchSelect.value;
 
         if (!clusterVal || !churchVal) {
           document.getElementById('step2Error').textContent = 'Please make a selection for both fields.';
           return;
         }
 
-        // Parse Step 1 payload cache to bundle completely
         const step1Data = JSON.parse(localStorage.getItem('registrationStep1')) || {};
         
         const completedProfilePayload = {
@@ -90,9 +161,7 @@
         };
 
         localStorage.setItem('registrationComplete', JSON.stringify(completedProfilePayload));
-        
-        // Final routing action destination setup
-        window.location.href = 'dashboard.html';
+        window.location.href = 'index.html';
       });
     </script>
   </body>
