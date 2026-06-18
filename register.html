@@ -7,6 +7,94 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+    <style>
+      /* Centered Circular Avatar Uploader Styles */
+      .avatar-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #334155;
+      }
+
+      .avatar-trigger-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 2px dashed #94a3b8;
+        background: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s ease;
+      }
+
+      .avatar-trigger-circle:hover {
+        border-color: #6366f1;
+        background: #cbd5e1;
+      }
+
+      /* SVG Upload Symbol Arrow Inside Circle */
+      .upload-symbol {
+        width: 28px;
+        height: 28px;
+        fill: none;
+        stroke: #475569;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: stroke 0.2s ease;
+        display: block;
+      }
+
+      .avatar-trigger-circle:hover .upload-symbol {
+        stroke: #6366f1;
+      }
+
+      /* Placed Cropped Image Preview Overlay */
+      .avatar-preview-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+        border-radius: 50%;
+      }
+
+      .avatar-label-text {
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #94a3b8;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      /* Hide Native File Input Component Completely */
+      .hidden-file-input {
+        display: none !important;
+      }
+
+      /* Clean Input Box Overrides */
+      input[readonly] {
+        background: transparent !important;
+        color: inherit !important;
+        cursor: default;
+        opacity: 1 !important;
+      }
+
+      /* Styled container context for inline ghost letters */
+      #regBirthday {
+        font-family: monospace;
+        letter-spacing: 1px;
+      }
+    </style>
   </head>
   <body>
     <div class="page-shell">
@@ -19,17 +107,29 @@
         <section class="register-panel">
           <div class="login-card">
             <div class="login-header">
-              <h2>Create Profile (Step 1)</h2>
+              <h2>Create Profile</h2>
             </div>
 
             <form id="registerForm" class="login-form">
+              
+              <div class="avatar-upload-container">
+                <div class="avatar-trigger-circle" onclick="document.getElementById('photoInput').click()">
+                  <svg id="uploadIconSymbol" class="upload-symbol" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                  </svg>
+                  <img id="avatarDisplayCircle" class="avatar-preview-img" alt="Profile Preview">
+                </div>
+                <div class="avatar-label-text">Select YouthSphere Photo</div>
+                
+                <input type="file" id="photoInput" class="hidden-file-input" accept="image/*" />
+              </div>
+
               <label class="field-group"><span>Full Name</span><input type="text" id="regName" required /></label>
-              <label class="field-group"><span>Email</span><input type="email" id="regEmail" required /></label>
+              <label class="field-group"><span>Email</span><input type="email" id="regEmail" placeholder="you@example.com" required /></label>
               <label class="field-group"><span>Password</span><input type="password" id="regPassword" required /></label>
-              <label class="field-group"><span>Birthday</span><input type="date" id="regBirthday" required /></label>
-              <label class="field-group"><span>Age</span><input type="number" id="regAge" required /></label>
-              <label class="field-group"><span>Contact Number</span><input type="text" id="regContact" required /></label>
-              <label class="field-group"><span>Avatar</span><input type="file" id="photoInput" accept="image/*" required /></label>
+              <label class="field-group"><span>Birthday</span><input type="text" id="regBirthday" maxlength="10" required /></label>
+              <label class="field-group"><span>Age</span><input type="number" id="regAge" readonly required /></label>
+              <label class="field-group"><span>Contact Number</span><input type="text" id="regContact" placeholder="09123456789" required /></label>
 
               <div id="step1Error" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
               <button type="submit" class="primary-button">Continue to Step 2</button>
@@ -45,14 +145,16 @@
           <img id="cropPreviewImage" style="max-width:100%;">
         </div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-          <button type="button" id="cancelCropBtn" style="background:#475569; color:#fff; border:none; padding:10px; border-radius:8px;">Cancel</button>
-          <button type="button" id="saveCropBtn" style="background:#4f46e5; color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold;">Apply Crop</button>
+          <button type="button" id="cancelCropBtn" style="background:#475569; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer;">Cancel</button>
+          <button type="button" id="saveCropBtn" style="background:#4f46e5; color:#fff; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">Apply Crop</button>
         </div>
       </div>
     </div>
 
     <script>
       let cropper = null;
+      
+      // File selector logic mapping events to popup preview canvas elements
       document.getElementById('photoInput').addEventListener('change', function(e) {
         if (e.target.files && e.target.files.length > 0) {
           const reader = new FileReader();
@@ -60,41 +162,72 @@
             document.getElementById('cropPreviewImage').src = event.target.result;
             document.getElementById('cropModal').style.display = 'flex';
             if (cropper) cropper.destroy();
-            cropper = new Cropper(document.getElementById('cropPreviewImage'), { aspectRatio: 1, viewMode: 1 });
+            cropper = new Cropper(document.getElementById('cropPreviewImage'), { 
+              aspectRatio: 1, 
+              viewMode: 1 
+            });
           };
           reader.readAsDataURL(e.target.files[0]);
         }
       });
 
+      // Processing and caching the square avatar blob
       document.getElementById('saveCropBtn').addEventListener('click', function() {
         if (cropper) {
           const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
-          localStorage.setItem('croppedProfilePhoto', canvas.toDataURL('image/jpeg', 0.8));
+          const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+          
+          localStorage.setItem('croppedProfilePhoto', base64Image);
+          
+          document.getElementById('uploadIconSymbol').style.display = 'none';
+          
+          const displayImg = document.getElementById('avatarDisplayCircle');
+          displayImg.src = base64Image;
+          displayImg.style.display = 'block';
+          
+          cropper.destroy();
+          cropper = null;
           document.getElementById('cropModal').style.display = 'none';
         }
       });
 
       document.getElementById('cancelCropBtn').addEventListener('click', function() {
+        if (cropper) {
+          cropper.destroy();
+          cropper = null;
+        }
         document.getElementById('cropModal').style.display = 'none';
         document.getElementById('photoInput').value = "";
       });
 
-      document.getElementById('registerForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (!localStorage.getItem('croppedProfilePhoto')) {
-          document.getElementById('step1Error').textContent = 'Please crop your profile image first.';
+      // Interactive Fixed Masking Engine for mm/dd/yyyy
+      const birthdayInput = document.getElementById('regBirthday');
+      const ageInput = document.getElementById('regAge');
+      const maskPattern = "mm/dd/yyyy";
+
+      // Set baseline text state
+      birthdayInput.value = maskPattern;
+
+      // Retain tracking cursor positioning rules flawlessly
+      birthdayInput.addEventListener('click', function() {
+        const val = birthdayInput.value;
+        const index = val.search(/[mdy]/);
+        if (index !== -1) {
+          birthdayInput.setSelectionRange(index, index);
+        } else {
+          birthdayInput.setSelectionRange(10, 10);
+        }
+      });
+
+      birthdayInput.addEventListener('keydown', function(e) {
+        const allowedNavigation = ['ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Delete'];
+        if (allowedNavigation.includes(e.key)) return;
+
+        // Block everything that isn't a baseline number or Backspace
+        if (!/^\d$/.test(e.key) && e.key !== 'Backspace') {
+          e.preventDefault();
           return;
         }
-        localStorage.setItem('registrationStep1', JSON.stringify({
-          name: document.getElementById('regName').value.trim(),
-          email: document.getElementById('regEmail').value.trim(),
-          password: document.getElementById('regPassword').value,
-          birthday: document.getElementById('regBirthday').value,
-          age: document.getElementById('regAge').value,
-          contactnumber: document.getElementById('regContact').value.trim()
-        }));
-        window.location.href = 'register-step2.html';
-      });
-    </script>
-  </body>
-</html>
+
+        e.preventDefault();
+        let currentArr = birthdayInput
