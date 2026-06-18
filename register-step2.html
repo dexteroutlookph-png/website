@@ -116,7 +116,7 @@
       const SUPABASE_ANON_KEY = 'sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf';
       
       // Initializing the global client instance cleanly
-      const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Alphabetically organized lookup registry data map
       const churchData = {
@@ -217,7 +217,7 @@
 
         try {
           // 1. Process identity registration details to Supabase Authentication engine
-          const { data: authData, error: authError } = await supabase.auth.signUp({
+          const { data: authData, error: authError } = await supabaseClient.auth.signUp({
             email: step1Data.email,
             password: step1Data.password,
             options: {
@@ -231,9 +231,7 @@
 
           // 2. Insert complementary descriptive attributes directly into profiles dataset table
           if (authData.user) {
-            const { error: profileError } = await supabase
-              .from('profiles') 
-              .insert([{
+            const { error: profileError } = await supabaseClient.from('profiles').insert([{
                 id: authData.user.id,
                 full_name: step1Data.name,
                 birthday: step1Data.birthday,
