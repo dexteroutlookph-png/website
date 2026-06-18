@@ -111,11 +111,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      // CRITICAL FIX: You MUST replace these placeholder strings with your actual Supabase Project details.
       const SUPABASE_URL = 'https://qymolbzmovnbiybpktqx.supabase.co'; 
       const SUPABASE_ANON_KEY = 'sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf';
       
-      // Initializing the global client instance cleanly
+      // Clean variable initialization setup
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Alphabetically organized lookup registry data map
@@ -232,15 +231,15 @@
           // 2. Insert complementary descriptive attributes directly into profiles dataset table
           if (authData.user) {
             const { error: profileError } = await supabaseClient.from('profiles').insert([{
-                id: authData.user.id,
-                full_name: step1Data.name,
-                birthday: step1Data.birthday,
-                age: parseInt(step1Data.age, 10),
-                contact_number: step1Data.contactnumber,
-                cluster: clusterVal,
-                local_church: churchVal,
-                avatar_url: base64Avatar 
-              }]);
+              id: authData.user.id,
+              full_name: step1Data.name,
+              birthday: step1Data.birthday,
+              age: parseInt(step1Data.age, 10),
+              contact_number: step1Data.contactnumber,
+              cluster: clusterVal,
+              local_church: churchVal,
+              avatar_url: base64Avatar 
+            }]);
 
             if (profileError) throw profileError;
           }
@@ -249,6 +248,7 @@
           localStorage.removeItem('registrationStep1');
           localStorage.removeItem('croppedProfilePhoto');
           
+          // Re-routed to the login view successfully
           window.location.href = 'index.html';
 
         } catch (err) {
