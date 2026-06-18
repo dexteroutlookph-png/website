@@ -184,7 +184,7 @@
               <label class="field-group"><span>Full Name</span><input type="text" id="regName" required /></label>
               <label class="field-group"><span>Email</span><input type="email" id="regEmail" placeholder="you@example.com" required /></label>
               <label class="field-group"><span>Password</span><input type="password" id="regPassword" required /></label>
-              <label class="field-group"><span>Birthday</span><input type="text" id="regBirthday" maxlength="10" required /></label>
+              <label class="field-group"><span>Birthday</span><input type="text" id="regBirthday" maxlength="10" placeholder="mm/dd/yyyy" required /></label>
               <label class="field-group"><span>Age</span><input type="number" id="regAge" readonly required /></label>
               <label class="field-group"><span>Contact Number</span><input type="text" id="regContact" placeholder="09123456789" required /></label>
 
@@ -267,93 +267,63 @@
         photoInput.value = "";
       });
 
-      // Interactive Fixed Masking Engine for mm/dd/yyyy
+      // Interactive Fixed Mobile-Friendly Masking Engine for mm/dd/yyyy
       const birthdayInput = document.getElementById('regBirthday');
       const ageInput = document.getElementById('regAge');
-      const maskPattern = "mm/dd/yyyy";
 
-      birthdayInput.value = maskPattern;
+      birthdayInput.addEventListener('input', function(e) {
+        document.getElementById('step1Error').textContent = '';
 
-      birthdayInput.addEventListener('click', function() {
-        const val = birthdayInput.value;
-        const index = val.search(/[mdy]/);
-        if (index !== -1) {
-          birthdayInput.setSelectionRange(index, index);
+        // Extract raw digits only to remain fully safe from mobile predictive text variations
+        let digits = this.value.replace(/\D/g, '');
+        
+        if (digits.length > 8) {
+          digits = digits.substring(0, 8);
+        }
+
+        // Dynamically append slashes according to current numeric string layout depth
+        let formatted = '';
+        if (digits.length > 0) {
+          formatted += digits.substring(0, 2);
+        }
+        if (digits.length > 2) {
+          formatted += '/' + digits.substring(2, 4);
+        }
+        if (digits.length > 4) {
+          formatted += '/' + digits.substring(4, 8);
+        }
+
+        this.value = formatted;
+
+        // Perform automated age valuation checks only upon full date entry completion
+        if (digits.length === 8) {
+          triggerAgeCalculation(formatted);
         } else {
-          birthdayInput.setSelectionRange(10, 10);
+          ageInput.value = '';
         }
       });
 
-      birthdayInput.addEventListener('keydown', function(e) {
-        const allowedNavigation = ['ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Delete'];
-        if (allowedNavigation.includes(e.key)) return;
-
-        if (!/^\d$/.test(e.key) && e.key !== 'Backspace') {
-          e.preventDefault();
-          return;
-        }
-
-        e.preventDefault();
-        let currentArr = birthdayInput.value.split('');
-        let cursor = birthdayInput.selectionStart;
-
-        if (/^\d$/.test(e.key)) {
-          if (cursor === 2 || cursor === 5) {
-            cursor++;
-          }
-          
-          if (cursor < 10) {
-            currentArr[cursor] = e.key;
-            birthdayInput.value = currentArr.join('');
-            
-            let nextCursor = cursor + 1;
-            if (nextCursor === 2 || nextCursor === 5) {
-              nextCursor++;
-            }
-            birthdayInput.setSelectionRange(nextCursor, nextCursor);
-            triggerAgeCalculation();
-          }
-        } else if (e.key === 'Backspace') {
-          if (cursor === 3 || cursor === 6) {
-            cursor--;
-          }
-          
-          if (cursor > 0) {
-            currentArr[cursor - 1] = maskPattern[cursor - 1];
-            birthdayInput.value = currentArr.join('');
-            birthdayInput.setSelectionRange(cursor - 1, cursor - 1);
-            triggerAgeCalculation();
-          }
-        }
-      });
-
-      function triggerAgeCalculation() {
-        const currentString = birthdayInput.value;
+      function triggerAgeCalculation(currentString) {
         const parts = currentString.split('/');
-        const monthStr = parts[0];
-        const dayStr = parts[1];
-        const yearStr = parts[2];
+        if (parts.length !== 3) return;
 
-        if (!/[y]/.test(yearStr)) {
-          const month = parseInt(monthStr, 10);
-          const day = parseInt(dayStr, 10);
-          const year = parseInt(yearStr, 10);
+        const month = parseInt(parts[0], 10);
+        const day = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
 
-          if (year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-            const birthDate = new Date(year, month - 1, day);
-            const today = new Date();
+        if (year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          const birthDate = new Date(year, month - 1, day);
+          const today = new Date();
 
-            if (birthDate.getFullYear() === year && birthDate.getMonth() === month - 1 && birthDate.getDate() === day && birthDate <= today) {
-              let age = today.getFullYear() - birthDate.getFullYear();
-              const monthDiff = today.getMonth() - birthDate.getMonth();
-              
-              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
-              }
-              ageInput.value = age;
-              document.getElementById('step1Error').textContent = '';
-              return;
+          if (birthDate.getFullYear() === year && birthDate.getMonth() === month - 1 && birthDate.getDate() === day && birthDate <= today) {
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
             }
+            ageInput.value = age;
+            return;
           }
         }
         ageInput.value = '';
@@ -370,7 +340,6 @@
           return;
         }
         
-        // FIX: Added .trim() to email and name inputs to avoid empty string space mismatches
         localStorage.setItem('registrationStep1', JSON.stringify({
           name: document.getElementById('regName').value.trim(),
           email: document.getElementById('regEmail').value.trim().toLowerCase(),
