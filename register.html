@@ -144,7 +144,10 @@
     <div class="page-shell">
       <header class="site-header">
         <div class="brand-logo"><img src="isiedlogo.png" alt="ISIED logo" /></div>
-        <div class="brand-copy"><span class="brand-name">ISIED</span></div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
       </header>
 
       <main class="page-layout single-column">
@@ -186,7 +189,7 @@
               <label class="field-group"><span>Contact Number</span><input type="text" id="regContact" placeholder="09123456789" required /></label>
 
               <div id="step1Error" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
-              <button type="submit" class="primary-button">Continue to Step 2</button>
+              <button type="submit" class="primary-button">Continue</button>
             </form>
           </div>
         </section>
@@ -326,14 +329,11 @@
 
       function triggerAgeCalculation() {
         const currentString = birthdayInput.value;
-        
-        // Extract numbers and slashes to figure out typed components
         const parts = currentString.split('/');
         const monthStr = parts[0];
         const dayStr = parts[1];
         const yearStr = parts[2];
 
-        // Check if year section has started receiving numeric digits
         if (!/[y]/.test(yearStr)) {
           const month = parseInt(monthStr, 10);
           const day = parseInt(dayStr, 10);

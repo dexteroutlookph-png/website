@@ -3,43 +3,65 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Register | YouthSphere</title>
+    <title>Register Step 2 | YouthSphere</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Clean Input Box Overrides */
+      input[readonly] {
+        background: transparent !important;
+        color: inherit !important;
+        cursor: default;
+        opacity: 1 !important;
+      }
+      
+      .login-header p {
+        margin-top: 6px;
+        font-size: 0.9rem;
+        color: #94a3b8;
+        line-height: 1.4;
+      }
+    </style>
   </head>
   <body>
     <div class="page-shell">
       <header class="site-header">
         <div class="brand-logo"><img src="isiedlogo.png" alt="ISIED logo" /></div>
-        <div class="brand-copy"><span class="brand-name">ISIED</span></div>
+        <div class="brand-copy">
+          <span class="brand-name">ISIED</span>
+          <span class="brand-subtext">Isabela South Ifugao East District</span>
+        </div>
       </header>
 
       <main class="page-layout single-column">
         <section class="register-panel">
           <div class="login-card">
-            <div class="login-header"><h2>Complete Profile (Step 2)</h2></div>
-            <form id="step2Form" class="login-form">
+            <div class="login-header">
+              <h2>Create Profile</h2>
+              <p>Select Cluster and Local Church to complete registration.</p>
+            </div>
+
+            <form id="registerFormStep2" class="login-form">
+              
               <label class="field-group">
                 <span>Cluster</span>
-                <select id="clusterSelect" required>
-                  <option value="" disabled selected>Select cluster</option>
-                  <option value="Alfonso Lista Cluster">Alfonso Lista Cluster</option>
-                  <option value="BRASO Cluster">BRASO Cluster</option>
-                  <option value="Cabatuan Cluster">Cabatuan Cluster</option>
-                  <option value="San Mateo Cluster">San Mateo Cluster</option>
-                </select>
-              </label>
-              <label class="field-group">
-                <span>Local Church</span>
-                <select id="churchSelect" required>
-                  <option value="" disabled selected>Select church</option>
-                  <option value="Alfonso Lista First UMC">Alfonso Lista First UMC</option>
-                  <option value="Salinungan West UMC">Salinungan West UMC</option>
-                  <option value="District Central Church">District Central Church</option>
+                <select id="regCluster" required>
+                  <option value="" disabled selected>Select Cluster</option>
+                  <option value="Cluster 1">Cluster 1</option>
+                  <option value="Cluster 2">Cluster 2</option>
+                  <option value="Cluster 3">Cluster 3</option>
+                  <option value="Cluster 4">Cluster 4</option>
                 </select>
               </label>
 
-              <div id="formError" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
-              <button type="submit" class="primary-button">Submit Profile</button>
+              <label class="field-group">
+                <span>Local Church</span>
+                <select id="regChurch" required>
+                  <option value="" disabled selected>Select Local Church</option>
+                  </select>
+              </label>
+
+              <div id="step2Error" style="color:#b91c1c; margin-bottom:10px; font-size:0.9rem;"></div>
+              <button type="submit" class="primary-button">Continue</button>
             </form>
           </div>
         </section>
@@ -47,39 +69,30 @@
     </div>
 
     <script>
-      document.getElementById('step2Form').addEventListener('submit', function(e) {
+      document.getElementById('registerFormStep2').addEventListener('submit', function(e) {
         e.preventDefault();
-        const step1Data = JSON.parse(localStorage.getItem('registrationStep1') || '{}');
-        const photoString = localStorage.getItem('croppedProfilePhoto') || "";
+        
+        const clusterVal = document.getElementById('regCluster').value;
+        const churchVal = document.getElementById('regChurch').value;
 
-        if (!step1Data.name || !step1Data.email) {
-          window.location.href = 'register.html';
+        if (!clusterVal || !churchVal) {
+          document.getElementById('step2Error').textContent = 'Please make a selection for both fields.';
           return;
         }
 
-        const payload = {
+        // Parse Step 1 payload cache to bundle completely
+        const step1Data = JSON.parse(localStorage.getItem('registrationStep1')) || {};
+        
+        const completedProfilePayload = {
           ...step1Data,
-          cluster: document.getElementById('clusterSelect').value,
-          church: document.getElementById('churchSelect').value,
-          photo: photoString
+          cluster: clusterVal,
+          localChurch: churchVal
         };
 
-        fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (!res.success) {
-            document.getElementById('formError').textContent = res.error || 'Failed registration.';
-            return;
-          }
-          localStorage.removeItem('registrationStep1');
-          localStorage.removeItem('croppedProfilePhoto');
-          window.location.href = 'index.html';
-        })
-        .catch(() => { document.getElementById('formError').textContent = 'Network infrastructure error.'; });
+        localStorage.setItem('registrationComplete', JSON.stringify(completedProfilePayload));
+        
+        // Final routing action destination setup
+        window.location.href = 'dashboard.html';
       });
     </script>
   </body>
