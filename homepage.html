@@ -47,7 +47,6 @@
   <div class="app-container">
     <header class="app-header"><h2 id="viewTitle">Home Feed</h2></header>
 
-    <!-- 1. THREAD FEED -->
     <main id="feedView" class="app-view active">
       <div class="inline-composer">
         <form id="inlineThreadForm">
@@ -67,7 +66,6 @@
       <div id="newsfeedStream"><p style="color: #94a3b8; text-align: center;">Syncing feed...</p></div>
     </main>
 
-    <!-- 2. EVENTS PANEL VIEW -->
     <section id="eventsView" class="app-view">
       <div class="ui-panel-card">
         <h3>District Events</h3>
@@ -82,7 +80,6 @@
       </div>
     </section>
 
-    <!-- 3. PROFILE PANEL -->
     <section id="profileView" class="app-view">
       <div class="ui-panel-card">
         <div class="profile-hero">
@@ -200,7 +197,7 @@
 
     function logout() {
       localStorage.clear();
-      window.location.href = '/';
+      window.location.href = 'index.html';
     }
   </script>
 </body>

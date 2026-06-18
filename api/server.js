@@ -16,7 +16,7 @@ if (SUPABASE_URL && SUPABASE_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   console.log('Supabase connected.');
 } else {
-  console.log('Supabase missing; using local file system storage.');
+  console.log('Using local file system storage fallback.');
 }
 
 function loadRegistrations() {
@@ -39,17 +39,15 @@ function saveRegistrations(data) {
 }
 
 /* ==========================================
-   1. EXPLICIT EXTENSIONLESS FRONTEND ROUTING
+   1. STANDARD FILE SYSTEM ROUTING (.html)
    ========================================== */
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'register.html')));
-app.get('/register-step2', (req, res) => res.sendFile(path.join(__dirname, 'register-step2.html')));
-app.get('/homepage', (req, res) => res.sendFile(path.join(__dirname, 'homepage.html')));
 
+// Serve all your workspace files exactly as named on disk
 app.use(express.static(path.join(__dirname)));
 
 /* ==========================================
-   2. SOCIAL CORE API PIPELINES
+   2. SOCIAL CORE DATABASE API ENDPOINTS
    ========================================== */
 app.get('/api/registrations', async (req, res) => {
   try {
@@ -132,4 +130,4 @@ app.post('/api/posts', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Pipeline live at: http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Pipeline running on traditional rules at: http://localhost:${PORT}`));

@@ -82,7 +82,7 @@
       document.getElementById('registerForm').addEventListener('submit', function(e) {
         e.preventDefault();
         if (!localStorage.getItem('croppedProfilePhoto')) {
-          document.getElementById('step1Error').textContent = 'Please crop your image profile first.';
+          document.getElementById('step1Error').textContent = 'Please crop your profile image first.';
           return;
         }
         localStorage.setItem('registrationStep1', JSON.stringify({
@@ -93,7 +93,7 @@
           age: document.getElementById('regAge').value,
           contactnumber: document.getElementById('regContact').value.trim()
         }));
-        window.location.href = '/register-step2';
+        window.location.href = 'register-step2.html';
       });
     </script>
   </body>

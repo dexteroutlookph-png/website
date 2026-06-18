@@ -53,7 +53,7 @@
         const photoString = localStorage.getItem('croppedProfilePhoto') || "";
 
         if (!step1Data.name || !step1Data.email) {
-          window.location.href = '/register';
+          window.location.href = 'register.html';
           return;
         }
 
@@ -72,14 +72,14 @@
         .then(res => res.json())
         .then(res => {
           if (!res.success) {
-            document.getElementById('formError').textContent = res.error || 'Failed registration submission profile.';
+            document.getElementById('formError').textContent = res.error || 'Failed registration.';
             return;
           }
           localStorage.removeItem('registrationStep1');
           localStorage.removeItem('croppedProfilePhoto');
-          window.location.href = '/';
+          window.location.href = 'index.html';
         })
-        .catch(() => { document.getElementById('formError').textContent = 'Network delivery failure error.'; });
+        .catch(() => { document.getElementById('formError').textContent = 'Network infrastructure error.'; });
       });
     </script>
   </body>

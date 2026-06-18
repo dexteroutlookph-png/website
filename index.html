@@ -44,7 +44,7 @@
               <div id="loginError" style="color:#b91c1c; min-height:18px; margin-bottom:12px; font-size:0.9rem;"></div>
               <button type="submit" class="primary-button">Sign In</button>
             </form>
-            <p class="register-text">Don't have an account? <a href="/register">Register here</a></p>
+            <p class="register-text">Don't have an account? <a href="register.html">Register here</a></p>
           </div>
         </section>
       </main>
@@ -64,7 +64,7 @@
           .then(users => {
             const match = users.find(u => u.email.toLowerCase() === email);
             if (!match || match.password !== password) {
-              errorEl.textContent = 'Invalid email or password parameters credentials.';
+              errorEl.textContent = 'Invalid email or password.';
               return;
             }
 
@@ -73,10 +73,10 @@
             }));
 
             errorEl.style.color = '#16a34a';
-            errorEl.textContent = 'Verified! Accessing application feed...';
-            setTimeout(() => { window.location.href = '/homepage'; }, 1000);
+            errorEl.textContent = 'Verified! Accessing dashboard...';
+            setTimeout(() => { window.location.href = 'homepage.html'; }, 1000);
           })
-          .catch(() => { errorEl.textContent = 'Could not process user pipeline request.'; });
+          .catch(() => { errorEl.textContent = 'Could not process login pipeline.'; });
       });
     </script>
   </body>
