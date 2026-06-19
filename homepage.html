@@ -87,6 +87,10 @@
       <div class="ui-panel-card" style="margin-bottom: 16px;">
         <div class="profile-hero">
           <img class="large-avatar" id="profAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Avatar">
+          <div style="margin-top: 10px;">
+          <input type="file" id="avatarFileSelector" accept="image/*" style="display: none;" />
+          <button type="button" id="changeAvatarBtn" style="background: #243249; color: #fff; border: 1px solid #3b4f6e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Change Photo</button>
+          </div>
           <h2 id="profName">Loading Profile...</h2>
           <div class="profile-meta" id="profEmail">loading@email.com</div>
           <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Details</div>
@@ -135,6 +139,62 @@
   </div>
 
 <script>
+
+  // Change Profile Photo Routine
+document.getElementById('changeAvatarBtn').addEventListener('click', () => {
+  document.getElementById('avatarFileSelector').click();
+});
+
+document.getElementById('avatarFileSelector').addEventListener('change', async function(e) {
+  if (!e.target.files || e.target.files[0] == null) return;
+  
+  const targetFile = e.target.files[0];
+  const changeBtn = document.getElementById('changeAvatarBtn');
+  
+  try {
+    changeBtn.disabled = true;
+    changeBtn.textContent = "Updating...";
+
+    // 1. Send the new image payload directly to Cloudinary
+    const uploadPayload = new FormData();
+    uploadPayload.append('file', targetFile);
+    uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
+
+    const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
+      method: 'POST',
+      body: uploadPayload
+    });
+
+    if (!serverResponse.ok) throw new Error('Failed to upload new profile asset to Cloudinary.');
+    
+    const parsedResponseData = await serverResponse.json();
+    const cleanSecureUrl = parsedResponseData.secure_url;
+
+    // 2. Sync the resulting link over to Supabase
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { error: dbError } = await supabaseClient
+      .from('profiles')
+      .update({ avatar_url: cleanSecureUrl }) // Matches your database column layout
+      .eq('id', user.id);
+
+    if (dbError) throw dbError;
+
+    // 3. Hot swap the local state variables so it updates live on the layout
+    currentUser.photo = cleanSecureUrl;
+    document.getElementById('profAvatar').src = cleanSecureUrl;
+    if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
+    if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
+
+    alert("Profile photo updated successfully!");
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "An error occurred while updating your profile picture.");
+  } finally {
+    changeBtn.disabled = false;
+    changeBtn.textContent = "Change Photo";
+    e.target.value = ''; // Reset selector choice
+  }
+});
     // 1. Navigation Controller (Moved to absolute top so tabs work instantly no matter what)
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
