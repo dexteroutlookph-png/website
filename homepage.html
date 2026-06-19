@@ -44,7 +44,7 @@
     .composer-fields { flex-grow: 1; }
     .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; font-family: inherit; }
     .inline-composer textarea:focus { outline: none; }
-    .composer-actions { display: flex; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
+    .composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
     .primary-button { background: #6366f1; color: white; border: none; padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor: pointer; }
     .primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -58,6 +58,13 @@
     .user-dir-info { display: flex; align-items: center; gap: 12px; }
     .view-profile-action-btn { background: #4f46e5; border: none; color: #fff; font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 14px; cursor: pointer; }
     .view-profile-action-btn:hover { background: #6366f1; }
+
+    /* Media Upload Attachments */
+    .preview-attachment-container { display: none; position: relative; margin-top: 10px; max-width: 120px; }
+    .preview-attachment-img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 1px solid #334155; }
+    .remove-attachment-btn { position: absolute; top: -6px; right: -6px; background: #ef4444; border: none; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; font-weight: bold; }
+    .media-attach-label { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.1); padding: 6px 12px; border-radius: 14px; border: 1px solid rgba(99,102,241,0.2); }
+    .media-attach-label:hover { background: rgba(99,102,241,0.2); color: #fff; }
   </style>
 </head>
 <body>
@@ -71,14 +78,25 @@
           <div class="composer-layout">
             <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User">
             <div class="composer-fields">
-              <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread..." required></textarea>
+              <textarea id="inlineThreadContent" placeholder="Share a church update or post a photo..."></textarea>
+              
+              <div class="preview-attachment-container" id="feedImgPreviewBox">
+                <img class="preview-attachment-img" id="feedImgPreviewElement" src="">
+                <button type="button" class="remove-attachment-btn" onclick="clearSelectedComposerFile('feed')">×</button>
+              </div>
             </div>
           </div>
           <div class="composer-actions">
+            <div>
+              <label class="media-attach-label">
+                📷 Add Photo
+                <input type="file" id="feedMediaFileSelector" accept="image/*" style="display:none;" onchange="processComposerFileSelection(this, 'feed')" />
+              </label>
+            </div>
             <button type="submit" class="primary-button" id="publishBtn">Post Thread</button>
           </div>
         </form>
-        <div id="inlinePostStatus" style="margin-top: 8px; font-size: 0.85rem; padding-left: 50px;"></div>
+        <div id="inlinePostStatus" style="margin-top:8px; font-size:0.85rem; padding-left:50px; color:#a5b4fc;"></div>
       </div>
       <div id="newsfeedStream"><p style="color: #94a3b8; text-align: center;">Syncing feed...</p></div>
     </main>
@@ -135,9 +153,20 @@
         <form id="profilePostForm">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <img class="thread-avatar" id="profileComposerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Mini Avatar" style="width:36px; height:36px;" />
-            <textarea id="profilePostContent" placeholder="Share a thought..." style="flex: 1; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; min-height: 40px; resize: none; outline: none; font-family: inherit;" required></textarea>
+            <div style="flex: 1;">
+              <textarea id="profilePostContent" placeholder="Share an update or timeline photo..." style="width:100%; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; min-height: 40px; resize: none; outline: none; box-sizing:border-box; font-family: inherit;"></textarea>
+              
+              <div class="preview-attachment-container" id="profileImgPreviewBox">
+                <img class="preview-attachment-img" id="profileImgPreviewElement" src="">
+                <button type="button" class="remove-attachment-btn" onclick="clearSelectedComposerFile('profile')">×</button>
+              </div>
+            </div>
           </div>
-          <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top:1px solid #243249; padding-top:10px;">
+            <label class="media-attach-label">
+              📷 Add Photo
+              <input type="file" id="profileMediaFileSelector" accept="image/*" style="display:none;" onchange="processComposerFileSelection(this, 'profile')" />
+            </label>
             <button type="submit" class="primary-button submit-post-btn">Post</button>
           </div>
         </form>
@@ -170,7 +199,7 @@
     </div>
   </div>
 
- <script>
+  <script>
     // Configuration Keys
     const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
     const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
@@ -178,6 +207,10 @@
     let supabaseClient = null;
     let selectedTargetProfileUser = null; 
     let activeShareTargetPostId = null;
+
+    // Local Base64 staging variables
+    let stagedFeedFileBase64 = null;
+    let stagedProfileFileBase64 = null;
 
     try {
       if (typeof supabase !== 'undefined') {
@@ -200,7 +233,6 @@
       const targetView = document.getElementById(viewId);
       if (targetView) targetView.classList.add('active');
       
-      // Sync active states on bottom nav buttons
       if (element) {
         element.classList.add('active');
       } else {
@@ -217,6 +249,72 @@
         loadPeopleDirectory();
       } else if (viewId === 'profileView') {
         applyProfileViewUIChange(selectedTargetProfileUser ? false : true);
+      }
+    }
+
+    // Process local photo selection to Base64 data string
+    function processComposerFileSelection(input, context) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (context === 'feed') {
+          stagedFeedFileBase64 = e.target.result;
+          document.getElementById('feedImgPreviewElement').src = stagedFeedFileBase64;
+          document.getElementById('feedImgPreviewBox').style.display = 'block';
+        } else {
+          stagedProfileFileBase64 = e.target.result;
+          document.getElementById('profileImgPreviewElement').src = stagedProfileFileBase64;
+          document.getElementById('profileImgPreviewBox').style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Reset local staging photo selection
+    function clearSelectedComposerFile(context) {
+      if (context === 'feed') {
+        stagedFeedFileBase64 = null;
+        document.getElementById('feedMediaFileSelector').value = '';
+        document.getElementById('feedImgPreviewBox').style.display = 'none';
+        document.getElementById('feedImgPreviewElement').src = '';
+      } else {
+        stagedProfileFileBase64 = null;
+        document.getElementById('profileMediaFileSelector').value = '';
+        document.getElementById('profileImgPreviewBox').style.display = 'none';
+        document.getElementById('profileImgPreviewElement').src = '';
+      }
+    }
+
+    // Upload Helper for Supabase public storage bucket
+    async function uploadBase64ToStorage(base64Str) {
+      try {
+        const parts = base64Str.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType });
+        const pathFileName = `post_media_${Date.now()}_${Math.floor(Math.random() * 100000)}.jpg`;
+        
+        // Stored inside 'avatars' public folder/bucket infrastructure
+        const { data, error } = await supabaseClient.storage
+          .from('avatars')
+          .upload(pathFileName, blob, { contentType: contentType });
+          
+        if (error) throw error;
+        
+        const { data: publicUrlData } = supabaseClient.storage
+          .from('avatars')
+          .getPublicUrl(pathFileName);
+          
+        return publicUrlData.publicUrl;
+      } catch (err) {
+        console.error("Storage upload failure:", err);
+        return null;
       }
     }
 
@@ -277,7 +375,7 @@
       }
     }
 
-    // Pull Global Feed Stream
+    // Pull Global Feed Stream (With dynamic image rendering)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) return;
@@ -315,6 +413,18 @@
           const postLikesList = globalLikes?.filter(l => String(l.post_id) === String(post.id)) || [];
           const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
 
+          // Recovery and rendering for older uploaded photo assets
+          let imageMarkup = "";
+          if (post.image_url) {
+            imageMarkup = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:340px; object-fit:cover; display:block;" />`;
+          }
+
+          let textMarkup = post.content ? `<div class="thread-content">${formatPostContentText(post.content, profiles)}</div>` : '';
+          // Adjust layout spacing if it's a photo-only update
+          if (!post.content && post.image_url) {
+            imageMarkup = `<div style="padding-left: 50px;">${imageMarkup}</div>`;
+          }
+
           let quoteMarkup = "";
           if (post.parent_post_id) {
             const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
@@ -337,7 +447,8 @@
                 <div style="font-size:0.75rem; color:#64748b;">${time}</div>
               </div>
             </div>
-            <div class="thread-content">${formatPostContentText(post.content, profiles)}</div>
+            ${textMarkup}
+            ${imageMarkup}
             ${quoteMarkup}
             <div class="post-actions-bar">
               <button class="action-trigger ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
@@ -384,39 +495,72 @@
     // Submit Feed Post
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const text = document.getElementById('inlineThreadContent');
-      if (!supabaseClient || !text.value.trim()) return;
+      const text = document.getElementById('inlineThreadContent').value.trim();
+      const statusField = document.getElementById('inlinePostStatus');
+      
+      if (!supabaseClient) return;
+      if (!text && !stagedFeedFileBase64) {
+        alert("Please add text or select an image to post.");
+        return;
+      }
 
       try {
+        statusField.textContent = "Publishing update to Sphere...";
+        let remoteFileUploadedUrl = null;
+        
+        if (stagedFeedFileBase64) {
+          remoteFileUploadedUrl = await uploadBase64ToStorage(stagedFeedFileBase64);
+        }
+
         await supabaseClient.from('posts').insert([{ 
           user_id: currentUser.id,
           name: currentUser.name, 
           email: currentUser.email, 
-          content: text.value,
+          content: text || null,
+          image_url: remoteFileUploadedUrl,
           avatar_url: currentUser.photo,
           createdat: new Date().toISOString()
         }]);
-        text.value = '';
+        
+        document.getElementById('inlineThreadContent').value = '';
+        clearSelectedComposerFile('feed');
+        statusField.textContent = "";
         loadFeedStream();
-      } catch (err) { console.error(err); }
+      } catch (err) { 
+        console.error(err);
+        statusField.textContent = "Submission error. Try again.";
+      }
     });
 
     // Profile Composer Submission
     document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const text = document.getElementById('profilePostContent');
-      if (!supabaseClient || !text.value.trim()) return;
+      const text = document.getElementById('profilePostContent').value.trim();
+      
+      if (!supabaseClient) return;
+      if (!text && !stagedProfileFileBase64) {
+        alert("Please write a comment or attach an image.");
+        return;
+      }
 
       try {
+        let remoteFileUploadedUrl = null;
+        if (stagedProfileFileBase64) {
+          remoteFileUploadedUrl = await uploadBase64ToStorage(stagedProfileFileBase64);
+        }
+
         await supabaseClient.from('posts').insert([{
           user_id: currentUser.id,
           name: currentUser.name,
           email: currentUser.email,
-          content: text.value,
+          content: text || null,
+          image_url: remoteFileUploadedUrl,
           avatar_url: currentUser.photo,
           createdat: new Date().toISOString()
         }]);
-        text.value = '';
+        
+        document.getElementById('profilePostContent').value = '';
+        clearSelectedComposerFile('profile');
         renderProfileTimeline();
       } catch (err) { console.error(err); }
     });
@@ -439,7 +583,7 @@
       activeShareTargetPostId = postId;
       document.getElementById('quoteModalTargetPreview').innerHTML = `
         <div style="font-weight:700; font-size:0.8rem; color:#6366f1;">@${authorName}</div>
-        <div style="color:#94a3b8; font-size:0.85rem;">${textSnippet}</div>
+        <div style="color:#94a3b8; font-size:0.85rem;">${textSnippet || '[Media Update]'}</div>
       `;
       document.getElementById('quoteShareModal').style.display = 'flex';
     }
@@ -458,7 +602,7 @@
           user_id: currentUser.id,
           name: currentUser.name,
           email: currentUser.email,
-          content: commentary,
+          content: commentary || null,
           parent_post_id: activeShareTargetPostId,
           avatar_url: currentUser.photo,
           createdat: new Date().toISOString()
@@ -553,7 +697,7 @@
       renderProfileTimeline();
     }
 
-    // Profile Timeline Stream
+    // Profile Timeline Stream (With dynamic image rendering)
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
@@ -574,6 +718,12 @@
 
         posts.forEach(post => {
           let textMarkup = post.content ? `<div class="thread-content" style="padding-left:0; margin-top:6px;">${post.content}</div>` : '';
+          
+          let imageMarkup = "";
+          if (post.image_url) {
+            imageMarkup = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:300px; object-fit:cover; display:block;" />`;
+          }
+
           let quoteMarkup = "";
           if (post.parent_post_id) {
             quoteMarkup = `<div class="quote-reference-box" style="margin-left:0;"><div style="color:#94a3b8; font-size:0.85rem;">[Shared Quote Entry]</div></div>`;
@@ -590,6 +740,7 @@
               </div>
             </div>
             ${textMarkup}
+            ${imageMarkup}
             ${quoteMarkup}
           `;
           feed.appendChild(card);
