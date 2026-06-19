@@ -361,7 +361,7 @@
       }
     }
 
-    // 5. Load Public Global Newsfeed Feed From Supabase
+   // 5. Load Public Global Newsfeed Feed From Supabase (With Live Profile Sync)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -369,9 +369,13 @@
         return;
       }
       try {
+        // Relational Fetch: Fetch post data AND link to the live profiles table record
         const { data: posts, error } = await supabaseClient
           .from('posts')
-          .select('*')
+          .select(`
+            id, name, email, content, image_url, createdat, user_id,
+            profiles ( avatar_url )
+          `)
           .order('createdat', { ascending: false });
 
         if (error) throw error;
@@ -384,7 +388,11 @@
 
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
-          let avatarSrc = post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          
+          // 1. Prioritize the live profile picture from the joined table relationship
+          // 2. Fallback to the historical hardcoded avatar string if the profile link fails
+          // 3. Fallback to the default base64 placeholder
+          let avatarSrc = post.profiles?.avatar_url || post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
           
           let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
           let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
@@ -405,7 +413,7 @@
           stream.appendChild(card);
         });
       } catch (err) {
-        console.error(err);
+        console.error("Feed loading crashed:", err);
         stream.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to pull live cloud feed.</p>`;
       }
     }
