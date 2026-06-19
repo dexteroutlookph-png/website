@@ -369,7 +369,7 @@
         return;
       }
       try {
-        // Relational Fetch: Fetch post data AND link to the live profiles table record
+        // Relational Fetch: Pulls posts while looking up the author's live profile record
         const { data: posts, error } = await supabaseClient
           .from('posts')
           .select(`
@@ -389,9 +389,7 @@
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
           
-          // 1. Prioritize the live profile picture from the joined table relationship
-          // 2. Fallback to the historical hardcoded avatar string if the profile link fails
-          // 3. Fallback to the default base64 placeholder
+          // Grabs the real-time photo from the profile table. Fallback to placeholder if missing.
           let avatarSrc = post.profiles?.avatar_url || post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
           
           let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
