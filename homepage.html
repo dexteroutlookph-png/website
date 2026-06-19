@@ -10,29 +10,48 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
   <style>
-    body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; }
+    body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; font-family: system-ui, -apple-system, sans-serif; }
     .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; }
     .app-header { position: sticky; top: 0; background: rgba(7, 20, 38, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100; padding: 16px; text-align: center; border-bottom: 1px solid #1e293b; }
     .app-header h2 { margin: 0; font-size: 1.3rem; color: #fff; font-weight: 700; }
     .threads-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid #1e293b; display: flex; justify-content: space-around; padding: 16px 0; z-index: 200; }
-    .nav-item { background: none; border: none; color: #64748b; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 32px; border-radius: 20px; transition: all 0.2s ease; }
+    .nav-item { background: none; border: none; color: #64748b; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: all 0.2s ease; position: relative; }
     .nav-item:hover { color: #fff; }
     .nav-item.active { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+    .badge-dot { position: absolute; top: 6px; right: 4px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; display: none; }
+    
     .app-view { display: none; padding: 16px; flex-grow: 1; }
     .app-view.active { display: block; animation: feedFadeIn 0.2s ease-out; }
     @keyframes feedFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .thread-card, .ui-panel-card { background: #1e293b; padding: 18px; border-radius: 16px; margin-bottom: 14px; border: 1px solid #334155; }
     .thread-header { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
     .thread-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #4338ca; border: 1.5px solid #4f46e5; }
+    .clickable-target { cursor: pointer; }
+    .clickable-target:hover { text-decoration: underline; color: #6366f1 !important; }
     .thread-user { font-weight: 700; color: #fff; font-size: 0.95rem; }
     .thread-content { font-size: 1rem; color: #e2e8f0; line-height: 1.5; padding-left: 50px; word-break: break-word; }
+    
+    /* New Feature Style Rules */
+    .mention-link { color: #38bdf8; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .mention-link:hover { text-decoration: underline; }
+    .post-actions-bar { display: flex; gap: 20px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #243249; font-size: 0.85rem; color: #94a3b8; padding-left: 50px; }
+    .action-trigger { display: flex; align-items: center; gap: 6px; cursor: pointer; background: none; border: none; color: inherit; font-size: inherit; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
+    .action-trigger:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .action-trigger.liked { color: #f43f5e; font-weight: bold; }
+    .quote-reference-box { background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; margin: 10px 0 0 50px; font-size: 0.9rem; }
+    .notif-card { display: flex; gap: 12px; padding: 14px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
+    .notif-card.unread { border-left: 3px solid #6366f1; background: rgba(99, 102, 241, 0.03); }
+    .notif-icon { font-size: 1.2rem; }
+    .notif-body { flex: 1; font-size: 0.88rem; color: #e2e8f0; }
+    .notif-time { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+
     .inline-composer { background: #11192e; border: 1px solid #243249; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
     .composer-layout { display: flex; gap: 12px; }
     .composer-fields { flex-grow: 1; }
-    .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; }
+    .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; font-family: inherit; }
     .inline-composer textarea:focus { outline: none; }
     .composer-actions { display: flex; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
-    .composer-actions button { padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; }
+    .composer-actions button { padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor: pointer; }
     .event-item { padding: 16px; border-bottom: 1px solid #334155; display: flex; gap: 16px; align-items: flex-start; }
     .event-item:last-child { border-bottom: none; }
     .event-date-badge { background: #4f46e5; color: #fff; padding: 8px; border-radius: 10px; text-align: center; min-width: 55px; font-weight: bold; }
@@ -44,6 +63,12 @@
     .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; }
     .profile-hero h2 { margin: 0 0 6px 0; color: #fff; font-size: 1.4rem; }
     .profile-meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 4px; }
+    
+    .user-dir-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #1e293b; }
+    .user-dir-item:last-child { border-bottom: none; }
+    .user-dir-info { display: flex; align-items: center; gap: 12px; }
+    .view-profile-action-btn { background: #4f46e5; border: none; color: #fff; font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 14px; cursor: pointer; }
+    .view-profile-action-btn:hover { background: #6366f1; }
   </style>
 </head>
 <body>
@@ -57,7 +82,7 @@
           <div class="composer-layout">
             <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User">
             <div class="composer-fields">
-              <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread..." required></textarea>
+              <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread... Type @name to mention!" required></textarea>
             </div>
           </div>
           <div class="composer-actions">
@@ -73,22 +98,49 @@
     <section id="eventsView" class="app-view">
       <div class="ui-panel-card">
         <h3>District Events</h3>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:20px;">Upcoming youth gathers across ISIED.</p>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:20px;">Upcoming District Youth Council Meeting.</p>
         <div class="event-item">
-          <div class="event-date-badge"><span class="day">28</span><span class="month">Jun</span></div>
+          <div class="event-date-badge"><span class="day">18</span><span class="month">Jul</span></div>
           <div class="event-details">
-            <h4>District Youth Fellowship Summit</h4>
-            <div class="event-meta">⏰ 9:00 AM • 📍 District Central Church Hall</div>
+            <h4>District Youth Council Meeting</h4>
+            <div class="event-meta">⏰ TBA • 📍 TBA</div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="peopleView" class="app-view">
+      <div class="ui-panel-card">
+        <h3>Community Directory</h3>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:16px;">Connect with other youth members in the Sphere.</p>
+        <div id="peopleDirectoryList">
+          <p style="color: #94a3b8; text-align: center;">Loading community dashboard...</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="notificationsView" class="app-view">
+      <div class="ui-panel-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin:0;">Activity Pipeline</h3>
+          <button onclick="clearNotificationBadge()" style="background:transparent; border:none; color:#6366f1; font-size:0.8rem; cursor:pointer; font-weight: bold;">Mark all read</button>
+        </div>
+        <div id="notificationsWrapperFeed">
+          <p style="color:#94a3b8; text-align:center;">Syncing notifications...</p>
         </div>
       </div>
     </section>
 
     <section id="profileView" class="app-view">
       <div class="ui-panel-card" style="margin-bottom: 16px;">
+        <div id="profileContextBanner" style="display:none; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); padding:10px; border-radius:8px; margin-bottom:16px; text-align:left; font-size:0.85rem; color:#a5b4fc; justify-content:space-between; align-items:center;">
+          <span>Viewing peer timeline</span>
+          <button onclick="resetToOwnProfile()" style="background:#243249; border:none; color:#fff; font-size:0.75rem; padding:4px 10px; border-radius:4px; cursor:pointer;">My Profile</button>
+        </div>
+
         <div class="profile-hero">
           <img class="large-avatar" id="profAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Avatar">
-          <div style="margin-top: 10px;">
+          <div style="margin-top: 10px;" id="avatarControlWrapper">
             <input type="file" id="avatarFileSelector" accept="image/*" style="display: none;" />
             <button type="button" id="changeAvatarBtn" style="background: #243249; color: #fff; border: 1px solid #3b4f6e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Change Photo</button>
           </div>
@@ -96,16 +148,16 @@
           <div class="profile-meta" id="profEmail">loading@email.com</div>
           <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Details</div>
         </div>
-        <div style="border-top:1px solid #334155; padding-top:16px; text-align:center;">
+        <div style="border-top:1px solid #334155; padding-top:16px; text-align:center;" id="profileSignOutRow">
           <button onclick="logout()" class="primary-button" style="background:#ef4444; width:auto; padding:8px 20px; border-radius:20px; font-size:0.85rem; font-weight:700; border:none; color:white; cursor:pointer;">Sign Out</button>
         </div>
       </div>
 
-      <div class="ui-panel-card" style="margin-bottom: 16px; padding: 16px;">
+      <div class="ui-panel-card" id="profilePostComposerCard" style="margin-bottom: 16px; padding: 16px;">
         <form id="profilePostForm">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <img class="thread-avatar" id="profileComposerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Mini Avatar" style="width:36px; height:36px;" />
-            <textarea id="profilePostContent" placeholder="Share a thought..." style="flex: 1; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; min-height: 40px; resize: none; outline: none; font-family: inherit;" required></textarea>
+            <textarea id="profilePostContent" placeholder="Share a thought... Mention someone with @name" style="flex: 1; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; min-height: 40px; resize: none; outline: none; font-family: inherit;" required></textarea>
           </div>
 
           <div id="profileImagePreviewContainer" style="display: none; margin-top: 12px; position: relative; border-radius: 12px; overflow: hidden; max-height: 260px; background: #11192e; border: 1px solid #243249;">
@@ -126,17 +178,31 @@
         </form>
       </div>
 
-      <h3 style="font-size: 1rem; font-weight: 700; color: #94a3b8; margin: 24px 0 12px 4px; text-transform: uppercase; letter-spacing: 0.5px;">My Timeline</h3>
+      <h3 id="timelineHeadingText" style="font-size: 1rem; font-weight: 700; color: #94a3b8; margin: 24px 0 12px 4px; text-transform: uppercase; letter-spacing: 0.5px;">My Timeline</h3>
       <div id="profileTimelineFeed">
         <p style="color: #94a3b8; text-align: center;">Loading timeline entries...</p>
       </div>
     </section>
 
     <nav class="threads-nav">
-      <button class="nav-item active" onclick="switchView('feedView', 'Home Feed', this)">Feed</button>
-      <button class="nav-item" onclick="switchView('eventsView', 'Events', this)">Events</button>
-      <button class="nav-item" onclick="switchView('profileView', 'Profile', this)">Profile</button>
+      <button class="nav-item active" id="navBtnFeed" onclick="switchView('feedView', 'Home Feed', this)">Feed</button>
+      <button class="nav-item" id="navBtnEvents" onclick="switchView('eventsView', 'Events', this)">Events</button>
+      <button class="nav-item" id="navBtnPeople" onclick="switchView('peopleView', 'People', this)">People</button>
+      <button class="nav-item" id="navBtnNotif" onclick="switchView('notificationsView', 'Notifications', this)">Alerts<span class="badge-dot" id="notifDot"></span></button>
+      <button class="nav-item" id="navBtnProfile" onclick="switchView('profileView', 'Profile', this)">Profile</button>
     </nav>
+  </div>
+
+  <div id="quoteShareModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:480px;">
+      <h3 style="margin-top:0; color:#fff;">Quote Share Thread</h3>
+      <textarea id="quoteModalCommentInput" placeholder="Add your perspective onto this quote..." style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; color:#fff; min-height:60px; resize:none; font-family:inherit; outline:none; margin-bottom:12px;"></textarea>
+      <div id="quoteModalTargetPreview" style="background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; font-size: 0.9rem;"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+        <button onclick="closeQuoteModal()" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer;">Cancel</button>
+        <button id="submitQuoteShareBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:bold;">Share Timeline</button>
+      </div>
+    </div>
   </div>
 
   <div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
@@ -151,7 +217,7 @@
   </div>
 
   <script>
-    // 1. Navigation Controller 
+    // 1. Navigation View Switcher Engine
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -165,12 +231,21 @@
       
       if (viewId === 'feedView') {
         loadFeedStream();
+      } else if (viewId === 'peopleView') {
+        loadPeopleDirectory();
+      } else if (viewId === 'notificationsView') {
+        loadNotificationsPipeline();
+        clearNotificationBadge();
       } else if (viewId === 'profileView') {
-        renderProfileTimeline();
+        if(!selectedTargetProfileUser) {
+          resetToOwnProfile();
+        } else {
+          renderProfileTimeline();
+        }
       }
     }
 
-    // 2. Cloud Configuration
+    // 2. Cloud Configuration Keys
     const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
     const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
     
@@ -180,6 +255,8 @@
 
     let supabaseClient = null;
     let activeCropperInstance = null;
+    let selectedTargetProfileUser = null; 
+    let activeShareTargetPostId = null;
 
     try {
       if (typeof supabase !== 'undefined') {
@@ -190,6 +267,7 @@
     }
 
     let currentUser = {
+      id: "",
       name: "Anonymous User", 
       email: "guest@isied.org", 
       cluster: "Unassigned Cluster", 
@@ -198,6 +276,44 @@
     };
 
     let selectedFileObject = null;
+
+    // --- NEW: PARSE TEXT INTERACTION MENTIONS (@Name) ---
+    function formatPostContentText(text, usersDirectory = []) {
+      if (!text) return "";
+      let escapedHtml = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      
+      return escapedHtml.replace(/@([a-zA-Z0-9_\s]{3,30})/g, (match, capturedName) => {
+        const trimmed = capturedName.trim();
+        const found = usersDirectory.find(u => u.full_name && u.full_name.toLowerCase() === trimmed.toLowerCase());
+        if (found) {
+          return `<span class="mention-link" onclick="event.stopPropagation(); navigateToUserByEmail('${found.email}')">@${found.full_name}</span>`;
+        }
+        return match; 
+      });
+    }
+
+    // --- NEW: SCAN FOR ENTRIES TO DELIVER MENTION NOTIFICATIONS ---
+    async function scanAndTriggerMentions(textContent, sourcePostId) {
+      if (!textContent || !supabaseClient) return;
+      const explicitMatches = [...textContent.matchAll(/@([a-zA-Z0-9_\s]{3,30})/g)];
+      
+      const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name');
+      if (!profiles) return;
+
+      for (let match of explicitMatches) {
+        const targetName = match[1].trim();
+        const detectedUser = profiles.find(p => p.full_name && p.full_name.toLowerCase() === targetName.toLowerCase());
+        
+        if (detectedUser && detectedUser.id !== currentUser.id) {
+          await supabaseClient.from('notifications').insert([{
+            receiver_id: detectedUser.id,
+            sender_id: currentUser.id,
+            type: 'mention',
+            post_id: sourcePostId
+          }]);
+        }
+      }
+    }
 
     // 3. Avatar Modification Interceptors (Croppie Flow)
     document.getElementById('changeAvatarBtn').addEventListener('click', () => {
@@ -281,10 +397,6 @@
 
           if (dbError) throw dbError;
 
-          if (!data || data.length === 0) {
-            throw new Error("RLS Policy Blocked: The database accepted the request but refused to save it. Make sure your UPDATE policy is active for authenticated users.");
-          }
-
           currentUser.photo = cleanSecureUrl;
           document.getElementById('profAvatar').src = cleanSecureUrl;
           if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
@@ -329,29 +441,27 @@
 
         const { data: profile, error: dbError } = await supabaseClient
           .from('profiles')
-          .select('full_name, cluster, local_church, avatar_url') 
+          .select('id, full_name, cluster, local_church, avatar_url, email') 
           .eq('id', user.id)
           .single();
 
         if (dbError) throw dbError;
 
         if (profile) {
+          currentUser.id = profile.id;
           currentUser.name = profile.full_name || currentUser.name;
-          currentUser.email = user.email || currentUser.email; 
+          currentUser.email = profile.email || user.email || currentUser.email; 
           currentUser.cluster = profile.cluster || currentUser.cluster;
           currentUser.church = profile.local_church || currentUser.church;
           currentUser.photo = profile.avatar_url || currentUser.photo;
         }
 
-        document.getElementById('profName').textContent = currentUser.name;
-        document.getElementById('profEmail').textContent = currentUser.email;
-        document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
-        
-        if (currentUser.photo) {
-          document.getElementById('profAvatar').src = currentUser.photo;
-          document.getElementById('composerAvatar').src = currentUser.photo;
-          document.getElementById('profileComposerAvatar').src = currentUser.photo;
-        }
+        document.getElementById('composerAvatar').src = currentUser.photo || document.getElementById('composerAvatar').src;
+        document.getElementById('profileComposerAvatar').src = currentUser.photo || document.getElementById('profileComposerAvatar').src;
+
+        resetToOwnProfile();
+        checkUnreadNotificationsCount();
+        setInterval(checkUnreadNotificationsCount, 15000);
 
       } catch (err) {
         console.error("Profile load error:", err.message);
@@ -361,7 +471,7 @@
       }
     }
 
-   // 5. Load Public Global Newsfeed Feed From Supabase (Bulletproof Hybrid View)
+    // 5. Load Public Global Newsfeed Feed From Supabase (Upgraded for Likes & Quote Rendering)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -369,7 +479,6 @@
         return;
       }
       try {
-        // Attempt a clean flat select first to guarantee the feed NEVER crashes
         const { data: posts, error } = await supabaseClient
           .from('posts')
           .select('*')
@@ -383,47 +492,84 @@
           return;
         }
 
-        // Fetch all profiles in one quick parallel request to map live avatars manually
-        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url');
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url, email, full_name, cluster, local_church');
+        const { data: globalLikes } = await supabaseClient.from('likes').select('post_id, user_id');
+
         const profileMap = {};
+        const profileEmailMap = {};
         if (profiles) {
-          profiles.forEach(p => { profileMap[p.id] = p.avatar_url; });
+          profiles.forEach(p => { 
+            profileMap[p.id] = p; 
+            if (p.email) profileEmailMap[p.email] = p;
+          });
         }
 
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
           
-          // Hybrid Sync Strategy:
-          // 1. Look for a live matching profile avatar in our map using user_id
-          // 2. If it's a match for you locally, use your fresh cached image
-          // 3. Fallback to whatever string was saved on the post
-          // 4. Fallback to default SVG placeholder
+          let linkedUserRecord = null;
+          if (post.user_id && profileMap[post.user_id]) linkedUserRecord = profileMap[post.user_id];
+          else if (post.email && profileEmailMap[post.email]) linkedUserRecord = profileEmailMap[post.email];
+
           let avatarSrc = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
-          
-          if (post.user_id && profileMap[post.user_id]) {
-            avatarSrc = profileMap[post.user_id];
-          } else if (currentUser && post.email === currentUser.email && currentUser.photo) {
+          if (linkedUserRecord && linkedUserRecord.avatar_url) avatarSrc = linkedUserRecord.avatar_url;
+          else if (post.avatar_url) avatarSrc = post.avatar_url;
+
+          if (currentUser && post.email === currentUser.email && currentUser.photo && !linkedUserRecord) {
             avatarSrc = currentUser.photo;
-          } else if (post.avatar_url) {
-            avatarSrc = post.avatar_url;
           }
           
-          let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
+          // Count likes and map if user liked this card row
+          const postLikesList = globalLikes?.filter(l => String(l.post_id) === String(post.id)) || [];
+          const userHasLiked = postLikesList.some(l => l.user_id === currentUser.id);
+
+          // Render Quote Element Container
+          let quoteMarkup = "";
+          if (post.parent_post_id) {
+            const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
+            if (parent) {
+              quoteMarkup = `
+                <div class="quote-reference-box">
+                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name}</div>
+                  <div style="color:#94a3b8;">${formatPostContentText(parent.content, profiles)}</div>
+                </div>`;
+            }
+          }
+
+          let textMarkup = post.content ? `<div class="thread-content">${formatPostContentText(post.content, profiles)}</div>` : '';
           let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
           
           const card = document.createElement('div');
           card.className = 'thread-card';
+          
           card.innerHTML = `
             <div class="thread-header">
-              <img class="thread-avatar" src="${avatarSrc}">
+              <img class="thread-avatar clickable-target" src="${avatarSrc}" data-email="${post.email || ''}">
               <div>
-                <div class="thread-user">@${post.name}</div>
+                <div class="thread-user clickable-target" data-email="${post.email || ''}">@${post.name}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${time}</div>
               </div>
             </div>
             ${textMarkup}
             ${imageMarkup}
+            ${quoteMarkup}
+            <div class="post-actions-bar">
+              <button class="action-trigger ${userHasLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLikePost('${post.id}', ${userHasLiked}, '${post.user_id || ''}')">
+                ❤️ <span>${postLikesList.length}</span>
+              </button>
+              <button class="action-trigger" onclick="event.stopPropagation(); openQuoteModal('${post.id}', '${post.name}', \`${(post.content || '').replace(/`/g, '\\`').replace(/\n/g, ' ')}\`)">
+                🔄 Share Quote
+              </button>
+            </div>
           `;
+
+          card.querySelectorAll('.clickable-target').forEach(element => {
+            element.addEventListener('click', function() {
+              const targetEmail = this.getAttribute('data-email');
+              if (targetEmail) navigateToUserByEmail(targetEmail);
+            });
+          });
+
           stream.appendChild(card);
         });
       } catch (err) {
@@ -432,7 +578,7 @@
       }
     }
 
-    // 6. Submit New Thread Post (Home tab)
+    // 6. Submit New Thread Post (Home tab with Mention hook check)
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!supabaseClient) return;
@@ -447,7 +593,7 @@
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
 
-        const { error } = await supabaseClient.from('posts').insert([
+        const { data: newPost, error } = await supabaseClient.from('posts').insert([
           { 
             user_id: user.id,
             name: currentUser.name, 
@@ -456,9 +602,11 @@
             avatar_url: currentUser.photo,
             createdat: new Date().toISOString()
           }
-        ]);
+        ]).select().single();
 
         if (error) throw error;
+
+        await scanAndTriggerMentions(text.value, newPost.id);
 
         text.value = '';
         status.style.color = '#16a34a';
@@ -472,6 +620,145 @@
         btn.disabled = false;
       }
     });
+
+    // --- NEW: INTERACTIVE HEART LIKE LOGIC ---
+    async function toggleLikePost(postId, currentlyLiked, postAuthorId) {
+      if (!supabaseClient || !currentUser.id) return;
+      try {
+        if (currentlyLiked) {
+          await supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+        } else {
+          await supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }]);
+          
+          if (postAuthorId && postAuthorId !== currentUser.id) {
+            await supabaseClient.from('notifications').insert([{
+              receiver_id: postAuthorId,
+              sender_id: currentUser.id,
+              type: 'like',
+              post_id: postId
+            }]);
+          }
+        }
+        loadFeedStream();
+      } catch(e) { console.error(e); }
+    }
+
+    // --- NEW: MODAL CONTROLLER INITIATION AND DISMISSED ACTIONS ---
+    function openQuoteModal(postId, authorName, textSnippet) {
+      activeShareTargetPostId = postId;
+      document.getElementById('quoteModalTargetPreview').innerHTML = `
+        <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom: 2px;">@${authorName}</div>
+        <div style="color:#64748b; font-size:0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${textSnippet}</div>
+      `;
+      document.getElementById('quoteShareModal').style.display = 'flex';
+    }
+
+    function closeQuoteModal() {
+      document.getElementById('quoteShareModal').style.display = 'none';
+      document.getElementById('quoteModalCommentInput').value = '';
+    }
+
+    document.getElementById('submitQuoteShareBtn').addEventListener('click', async function() {
+      const commentary = document.getElementById('quoteModalCommentInput').value.trim();
+      if (!activeShareTargetPostId || !supabaseClient) return;
+
+      try {
+        const { data: newPost, error } = await supabaseClient.from('posts').insert([{
+          user_id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          content: commentary,
+          parent_post_id: activeShareTargetPostId,
+          avatar_url: currentUser.photo,
+          createdat: new Date().toISOString()
+        }]).select().single();
+
+        if (error) throw error;
+
+        const { data: parentPost } = await supabaseClient.from('posts').select('user_id').eq('id', activeShareTargetPostId).single();
+        if (parentPost && parentPost.user_id && parentPost.user_id !== currentUser.id) {
+          await supabaseClient.from('notifications').insert([{
+            receiver_id: parentPost.user_id,
+            sender_id: currentUser.id,
+            type: 'share',
+            post_id: newPost.id
+          }]);
+        }
+
+        closeQuoteModal();
+        loadFeedStream();
+        switchView('feedView', 'Home Feed', document.getElementById('navBtnFeed'));
+      } catch (err) { console.error(err); }
+    });
+
+    // --- NEW: NOTIFICATIONS LOADER ACTIVITY FLOW ---
+    async function loadNotificationsPipeline() {
+      const feed = document.getElementById('notificationsWrapperFeed');
+      if (!supabaseClient || !currentUser.id) return;
+
+      try {
+        const { data: notifs, error } = await supabaseClient
+          .from('notifications')
+          .select('id, type, created_at, is_read, post_id, sender_id')
+          .eq('receiver_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name');
+        const profMap = {};
+        if (profiles) profiles.forEach(p => profMap[p.id] = p);
+
+        feed.innerHTML = '';
+        if (!notifs || notifs.length === 0) {
+          feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">Your activity pipeline is empty.</p>';
+          return;
+        }
+
+        notifs.forEach(n => {
+          const sender = profMap[n.sender_id];
+          const senderName = sender ? sender.full_name : "Someone";
+          let labelText = "", icon = "🔔";
+
+          if (n.type === 'like') { icon = "❤️"; labelText = `<b>${senderName}</b> loved your thread.`; }
+          else if (n.type === 'mention') { icon = "💬"; labelText = `<b>${senderName}</b> mentioned you in a thread.`; }
+          else if (n.type === 'share') { icon = "🔄"; labelText = `<b>${senderName}</b> quote-shared your thread on their timeline.`; }
+
+          const row = document.createElement('div');
+          row.className = `notif-card ${!n.is_read ? 'unread' : ''}`;
+          row.innerHTML = `
+            <div class="notif-icon">${icon}</div>
+            <div class="notif-body">
+              <div>${labelText}</div>
+              <div class="notif-time">${new Date(n.created_at).toLocaleString()}</div>
+            </div>
+          `;
+          
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', () => {
+            switchView('feedView', 'Home Feed', document.getElementById('navBtnFeed'));
+          });
+          feed.appendChild(row);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function checkUnreadNotificationsCount() {
+      if (!supabaseClient || !currentUser.id) return;
+      const { count } = await supabaseClient
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', currentUser.id)
+        .eq('is_read', false);
+      
+      document.getElementById('notifDot').style.display = count > 0 ? 'block' : 'none';
+    }
+
+    async function clearNotificationBadge() {
+      if (!supabaseClient || !currentUser.id) return;
+      await supabaseClient.from('notifications').update({ is_read: true }).eq('receiver_id', currentUser.id);
+      document.getElementById('notifDot').style.display = 'none';
+    }
 
     // 7. Handle Image Attachment Preview Configurations
     const profilePhotoInput = document.getElementById('profilePhotoInput');
@@ -536,7 +823,7 @@
 
         const { data: { user } } = await supabaseClient.auth.getUser();
 
-        const { error } = await supabaseClient.from('posts').insert([
+        const { data: newPost, error } = await supabaseClient.from('posts').insert([
           {
             user_id: user.id,
             name: currentUser.name,
@@ -546,9 +833,11 @@
             avatar_url: currentUser.photo,
             createdat: new Date().toISOString()
           }
-        ]);
+        ]).select().single();
 
         if (error) throw error;
+
+        await scanAndTriggerMentions(textVal, newPost.id);
 
         profilePostContent.value = '';
         profilePostContent.style.height = 'auto';
@@ -562,69 +851,141 @@
       }
     });
 
-    // 9. Render Profile Personal Timeline Feed Filtering
-    async function renderProfileTimeline() {
-      const feedElement = document.getElementById('profileTimelineFeed');
-      if (!supabaseClient) {
-        feedElement.innerHTML = '<p style="color:#64748b; text-align:center;">Configure Supabase to view timeline entries.</p>';
+    // 9. Load Community Directory ("People" Tab content generation)
+    async function loadPeopleDirectory() {
+      const container = document.getElementById('peopleDirectoryList');
+      if(!supabaseClient) {
+        container.innerHTML = '<p style="color:#64748b; text-align:center;">Configure database connection setup entries.</p>';
         return;
       }
-      feedElement.innerHTML = '<p style="color:#64748b; text-align:center;">Filtering your personal updates timeline...</p>';
+      container.innerHTML = '<p style="color:#64748b; text-align:center;">Scanning community rosters...</p>';
+      
+      try {
+        const { data: usersList, error } = await supabaseClient
+          .from('profiles')
+          .select('id, full_name, email, cluster, local_church, avatar_url')
+          .order('full_name', { ascending: true });
+          
+        if(error) throw error;
+        
+        container.innerHTML = '';
+        if(!usersList || usersList.length === 0) {
+          container.innerHTML = '<p style="color:#64748b; text-align:center;">No other users have registered accounts inside this shard.</p>';
+          return;
+        }
+        
+        usersList.forEach(userRecord => {
+          const userAvatar = userRecord.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          const userSubtext = `${userRecord.cluster || 'No Cluster'} • ${userRecord.local_church || 'General Church'}`;
+          
+          const row = document.createElement('div');
+          row.className = 'user-dir-item';
+          row.innerHTML = `
+            <div class="user-dir-info">
+              <img class="thread-avatar clickable-target" src="${userAvatar}" alt="Peer">
+              <div>
+                <div class="thread-user clickable-target" style="color:#fff;">${userRecord.full_name || 'Anonymous User'}</div>
+                <div style="font-size:0.75rem; color:#64748b;">${userSubtext}</div>
+              </div>
+            </div>
+            <button class="view-profile-action-btn" onclick="navigateToUserByEmail('${userRecord.email}')">View</button>
+          `;
+          container.appendChild(row);
+        });
+      } catch(e) { console.error(e); }
+    }
+
+    async function navigateToUserByEmail(email) {
+      if (email === currentUser.email) { resetToOwnProfile(); return; }
+      try {
+        const { data: p } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
+        if (p) {
+          selectedTargetProfileUser = { name: p.full_name, email: p.email, cluster: p.cluster, church: p.local_church, photo: p.avatar_url };
+          applyProfileViewUIChange(false);
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function resetToOwnProfile() { 
+      selectedTargetProfileUser = null; 
+      applyProfileViewUIChange(true); 
+    }
+
+    function applyProfileViewUIChange(isOwnProfile) {
+      const active = isOwnProfile ? currentUser : selectedTargetProfileUser;
+      document.getElementById('profName').textContent = active.name;
+      document.getElementById('profEmail').textContent = active.email;
+      document.getElementById('profDetails').textContent = `${active.cluster || 'General'} • ${active.church || 'YouthSphere'}`;
+      document.getElementById('profAvatar').src = active.photo || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+      
+      document.getElementById('profileContextBanner').style.display = isOwnProfile ? 'none' : 'flex';
+      document.getElementById('avatarControlWrapper').style.display = isOwnProfile ? 'block' : 'none';
+      document.getElementById('profileSignOutRow').style.display = isOwnProfile ? 'block' : 'none';
+      document.getElementById('profilePostComposerCard').style.display = isOwnProfile ? 'block' : 'none';
+      document.getElementById('timelineHeadingText').textContent = isOwnProfile ? "My Timeline" : `${active.name}'s Timeline`;
+      
+      renderProfileTimeline();
+      switchView('profileView', isOwnProfile ? 'Profile' : `@${active.name}`, document.getElementById('navBtnProfile'));
+    }
+
+    async function renderProfileTimeline() {
+      const feed = document.getElementById('profileTimelineFeed');
+      if (!supabaseClient) return;
+      const targetEmail = selectedTargetProfileUser ? selectedTargetProfileUser.email : currentUser.email;
 
       try {
-        const { data: posts, error } = await supabaseClient
-          .from('posts')
-          .select('*')
-          .eq('email', currentUser.email)
-          .order('createdat', { ascending: false });
-
-        if (error) throw error;
-
-        feedElement.innerHTML = '';
-        if (!posts || posts.length === 0) {
-          feedElement.innerHTML = '<p style="color:#64748b; text-align:center; padding: 24px 0;">No posts shared on your personal timeline yet.</p>';
+        const { data: posts } = await supabaseClient.from('posts').select('*').eq('email', targetEmail).order('createdat', { ascending: false });
+        feed.innerHTML = '';
+        if(!posts || posts.length === 0) {
+          feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No timeline updates shared.</p>';
           return;
         }
 
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url, email, full_name');
+
         posts.forEach(post => {
-          const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
-          const avatarSrc = currentUser.photo || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          let textMarkup = post.content ? `<div class="thread-content" style="padding-left:0; margin-top:6px;">${formatPostContentText(post.content, profiles)}</div>` : '';
+          let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:300px; object-fit:cover;" />` : '';
           
-          let textMarkup = post.content ? `<div class="thread-content" style="padding-left:0; margin-top:8px; color:#e2e8f0;">${post.content}</div>` : '';
-          let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Timeline Image Preview Post" />` : '';
+          let quoteMarkup = "";
+          if (post.parent_post_id) {
+            const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
+            if (parent) {
+              quoteMarkup = `
+                <div class="quote-reference-box" style="margin-left:0;">
+                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name}</div>
+                  <div style="color:#94a3b8;">${parent.content || ''}</div>
+                </div>`;
+            }
+          }
 
           const card = document.createElement('div');
           card.className = 'thread-card';
-          card.style.padding = '14px';
           card.innerHTML = `
-            <div class="thread-header" style="margin-bottom:0;">
-              <img class="thread-avatar" src="${avatarSrc}" style="width:34px; height:34px;">
+            <div class="thread-header">
+              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo)}">
               <div>
-                <div class="thread-user">${post.name}</div>
-                <div style="font-size:0.75rem; color:#64748b;">${time}</div>
+                <div class="thread-user">@${post.name}</div>
+                <div style="font-size:0.75rem; color:#64748b;">${post.createdat ? new Date(post.createdat).toLocaleString() : ''}</div>
               </div>
             </div>
             ${textMarkup}
             ${imageMarkup}
+            ${quoteMarkup}
           `;
-          feedElement.appendChild(card);
+          feed.appendChild(card);
         });
-      } catch (err) {
-        feedElement.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to pull public timelines stream.</p>';
+      } catch(e) { console.error(e); }
+    }
+
+    async function logout() {
+      if(supabaseClient) {
+        await supabaseClient.auth.signOut();
+        location.reload();
       }
     }
 
-    // Initialize application execution loops safely
-    document.addEventListener('DOMContentLoaded', () => {
-      initUserProfile();
-    });
-
-    async function logout() {
-      if (!supabaseClient) return;
-      await supabaseClient.auth.signOut();
-      localStorage.clear();
-      window.location.href = 'index.html';
-    }
+    document.addEventListener('DOMContentLoaded', initUserProfile);
   </script>
 </body>
 </html>
