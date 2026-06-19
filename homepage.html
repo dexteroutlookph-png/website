@@ -31,7 +31,6 @@
     .thread-user { font-weight: 700; color: #fff; font-size: 0.95rem; }
     .thread-content { font-size: 1rem; color: #e2e8f0; line-height: 1.5; padding-left: 50px; word-break: break-word; }
     
-    /* New Feature Style Rules */
     .mention-link { color: #38bdf8; font-weight: 600; cursor: pointer; text-decoration: none; }
     .mention-link:hover { text-decoration: underline; }
     .post-actions-bar { display: flex; gap: 20px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #243249; font-size: 0.85rem; color: #94a3b8; padding-left: 50px; }
@@ -98,12 +97,12 @@
     <section id="eventsView" class="app-view">
       <div class="ui-panel-card">
         <h3>District Events</h3>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:20px;">Upcoming District Youth Council Meeting.</p>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:20px;">Upcoming youth gathers across ISIED.</p>
         <div class="event-item">
-          <div class="event-date-badge"><span class="day">18</span><span class="month">Jul</span></div>
+          <div class="event-date-badge"><span class="day">28</span><span class="month">Jun</span></div>
           <div class="event-details">
-            <h4>District Youth Council Meeting</h4>
-            <div class="event-meta">⏰ TBA • 📍 TBA</div>
+            <h4>District Youth Fellowship Summit</h4>
+            <div class="event-meta">⏰ 9:00 AM • 📍 District Central Church Hall</div>
           </div>
         </div>
       </div>
@@ -277,7 +276,7 @@
 
     let selectedFileObject = null;
 
-    // --- NEW: PARSE TEXT INTERACTION MENTIONS (@Name) ---
+    // Parse text interaction mentions (@Name)
     function formatPostContentText(text, usersDirectory = []) {
       if (!text) return "";
       let escapedHtml = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -292,7 +291,7 @@
       });
     }
 
-    // --- NEW: SCAN FOR ENTRIES TO DELIVER MENTION NOTIFICATIONS ---
+    // Scan for entries to deliver mention notifications
     async function scanAndTriggerMentions(textContent, sourcePostId) {
       if (!textContent || !supabaseClient) return;
       const explicitMatches = [...textContent.matchAll(/@([a-zA-Z0-9_\s]{3,30})/g)];
@@ -456,8 +455,9 @@
           currentUser.photo = profile.avatar_url || currentUser.photo;
         }
 
-        document.getElementById('composerAvatar').src = currentUser.photo || document.getElementById('composerAvatar').src;
-        document.getElementById('profileComposerAvatar').src = currentUser.photo || document.getElementById('profileComposerAvatar').src;
+        const baseSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+        document.getElementById('composerAvatar').src = currentUser.photo || baseSvg;
+        document.getElementById('profileComposerAvatar').src = currentUser.photo || baseSvg;
 
         resetToOwnProfile();
         checkUnreadNotificationsCount();
@@ -471,7 +471,7 @@
       }
     }
 
-    // 5. Load Public Global Newsfeed Feed From Supabase (Upgraded for Likes & Quote Rendering)
+    // 5. Load Public Global Newsfeed Feed From Supabase
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -515,15 +515,13 @@
           if (linkedUserRecord && linkedUserRecord.avatar_url) avatarSrc = linkedUserRecord.avatar_url;
           else if (post.avatar_url) avatarSrc = post.avatar_url;
 
-          if (currentUser && post.email === currentUser.email && currentUser.photo && !linkedUserRecord) {
+          if (currentUser && post.email === currentUser.email && currentUser.photo) {
             avatarSrc = currentUser.photo;
           }
           
-          // Count likes and map if user liked this card row
           const postLikesList = globalLikes?.filter(l => String(l.post_id) === String(post.id)) || [];
           const userHasLiked = postLikesList.some(l => l.user_id === currentUser.id);
 
-          // Render Quote Element Container
           let quoteMarkup = "";
           if (post.parent_post_id) {
             const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
@@ -546,7 +544,7 @@
             <div class="thread-header">
               <img class="thread-avatar clickable-target" src="${avatarSrc}" data-email="${post.email || ''}">
               <div>
-                <div class="thread-user clickable-target" data-email="${post.email || ''}">@${post.name}</div>
+                <div class="thread-user clickable-target" data-email="${post.email || ''}">@${post.name || 'Anonymous'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${time}</div>
               </div>
             </div>
@@ -554,10 +552,10 @@
             ${imageMarkup}
             ${quoteMarkup}
             <div class="post-actions-bar">
-              <button class="action-trigger ${userHasLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleLikePost('${post.id}', ${userHasLiked}, '${post.user_id || ''}')">
+              <button class="action-trigger ${userHasLiked ? 'liked' : ''}" onclick="toggleLikePost(event, '${post.id}', ${userHasLiked}, '${post.user_id || ''}')">
                 ❤️ <span>${postLikesList.length}</span>
               </button>
-              <button class="action-trigger" onclick="event.stopPropagation(); openQuoteModal('${post.id}', '${post.name}', \`${(post.content || '').replace(/`/g, '\\`').replace(/\n/g, ' ')}\`)">
+              <button class="action-trigger" onclick="event.stopPropagation(); openQuoteModal('${post.id}', '${post.name || 'Anonymous'}', \`${(post.content || '').replace(/`/g, '\\`').replace(/\n/g, ' ')}\`)" style="cursor:pointer;">
                 🔄 Share Quote
               </button>
             </div>
@@ -578,7 +576,7 @@
       }
     }
 
-    // 6. Submit New Thread Post (Home tab with Mention hook check)
+    // 6. Submit New Thread Post (Home tab)
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!supabaseClient) return;
@@ -621,8 +619,9 @@
       }
     });
 
-    // --- NEW: INTERACTIVE HEART LIKE LOGIC ---
-    async function toggleLikePost(postId, currentlyLiked, postAuthorId) {
+    // Interactive Heart Likes Logic
+    async function toggleLikePost(event, postId, currentlyLiked, postAuthorId) {
+      if(event) event.stopPropagation();
       if (!supabaseClient || !currentUser.id) return;
       try {
         if (currentlyLiked) {
@@ -643,12 +642,12 @@
       } catch(e) { console.error(e); }
     }
 
-    // --- NEW: MODAL CONTROLLER INITIATION AND DISMISSED ACTIONS ---
+    // Quote Modal Controller
     function openQuoteModal(postId, authorName, textSnippet) {
       activeShareTargetPostId = postId;
       document.getElementById('quoteModalTargetPreview').innerHTML = `
         <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom: 2px;">@${authorName}</div>
-        <div style="color:#64748b; font-size:0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${textSnippet}</div>
+        <div style="color:#94a3b8; font-size:0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${textSnippet}</div>
       `;
       document.getElementById('quoteShareModal').style.display = 'flex';
     }
@@ -691,7 +690,7 @@
       } catch (err) { console.error(err); }
     });
 
-    // --- NEW: NOTIFICATIONS LOADER ACTIVITY FLOW ---
+    // Notifications Activity Pipeline
     async function loadNotificationsPipeline() {
       const feed = document.getElementById('notificationsWrapperFeed');
       if (!supabaseClient || !currentUser.id) return;
@@ -851,7 +850,7 @@
       }
     });
 
-    // 9. Load Community Directory ("People" Tab content generation)
+    // 9. Load Community Directory ("People" Tab)
     async function loadPeopleDirectory() {
       const container = document.getElementById('peopleDirectoryList');
       if(!supabaseClient) {
@@ -892,7 +891,10 @@
           `;
           container.appendChild(row);
         });
-      } catch(e) { console.error(e); }
+      } catch(e) { 
+        console.error(e); 
+        container.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to pull community records.</p>';
+      }
     }
 
     async function navigateToUserByEmail(email) {
@@ -913,10 +915,13 @@
 
     function applyProfileViewUIChange(isOwnProfile) {
       const active = isOwnProfile ? currentUser : selectedTargetProfileUser;
-      document.getElementById('profName').textContent = active.name;
-      document.getElementById('profEmail').textContent = active.email;
+      
+      document.getElementById('profName').textContent = active.name || 'Anonymous';
+      document.getElementById('profEmail').textContent = active.email || '';
       document.getElementById('profDetails').textContent = `${active.cluster || 'General'} • ${active.church || 'YouthSphere'}`;
-      document.getElementById('profAvatar').src = active.photo || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+      
+      const baseSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+      document.getElementById('profAvatar').src = active.photo || baseSvg;
       
       document.getElementById('profileContextBanner').style.display = isOwnProfile ? 'none' : 'flex';
       document.getElementById('avatarControlWrapper').style.display = isOwnProfile ? 'block' : 'none';
@@ -953,7 +958,7 @@
             if (parent) {
               quoteMarkup = `
                 <div class="quote-reference-box" style="margin-left:0;">
-                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name}</div>
+                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name || 'Anonymous'}</div>
                   <div style="color:#94a3b8;">${parent.content || ''}</div>
                 </div>`;
             }
@@ -965,7 +970,7 @@
             <div class="thread-header">
               <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo)}">
               <div>
-                <div class="thread-user">@${post.name}</div>
+                <div class="thread-user">@${post.name || 'Anonymous'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${post.createdat ? new Date(post.createdat).toLocaleString() : ''}</div>
               </div>
             </div>
