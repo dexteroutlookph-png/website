@@ -348,13 +348,14 @@
       }
     });
 
-    // 7. Profile Interactive Form Submission + Cloudinary Engine
+   // 7. Profile Interactive Form Submission + Cloudinary Engine
     document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!supabaseClient) return;
       const textVal = profilePostContent.value.trim();
       const submitBtn = this.querySelector('.submit-post-btn');
 
+      // Double-check we actually have data to send
       if (!textVal && !selectedFileObject) return;
 
       try {
@@ -363,7 +364,8 @@
 
         let finalCloudAssetUrl = null;
 
-        if (selectedFileObject) {
+        // Strict validation: Only upload to Cloudinary if an actual file payload exists
+        if (selectedFileObject instanceof File && selectedFileObject.size > 0) {
           const uploadPayload = new FormData();
           uploadPayload.append('file', selectedFileObject);
           uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
@@ -373,7 +375,11 @@
             body: uploadPayload
           });
 
-          if (!serverResponse.ok) throw new Error('Cloudinary Asset upload failed.');
+          if (!serverResponse.ok) {
+            const errorDetails = await serverResponse.json().catch(() => ({}));
+            console.error("Cloudinary Detailed Reject:", errorDetails);
+            throw new Error(errorDetails.error?.message || 'Cloudinary Asset upload failed. Double check that your upload preset is set to UNSIGNED.');
+          }
 
           const parsedResponseData = await serverResponse.json();
           finalCloudAssetUrl = parsedResponseData.secure_url;
@@ -392,6 +398,7 @@
 
         if (error) throw error;
 
+        // Reset composer UI states cleanly
         profilePostContent.value = '';
         profilePostContent.style.height = 'auto';
         document.getElementById('profileRemoveImageBtn').click();
@@ -403,7 +410,6 @@
         submitBtn.textContent = 'Post';
       }
     });
-
     // 8. Render Profile Personal Timeline Feed Filtering
     async function renderProfileTimeline() {
       const feedElement = document.getElementById('profileTimelineFeed');
