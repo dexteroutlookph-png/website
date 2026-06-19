@@ -368,6 +368,9 @@
         document.getElementById('composerAvatar').src = currentUser.photo || baseDefaultSvg;
         document.getElementById('profileComposerAvatar').src = currentUser.photo || baseDefaultSvg;
 
+        // Securely bind the Avatar Picker hooks right here once profiles load
+        bindAvatarPickerActions();
+
         applyProfileViewUIChange(true);
       } catch (err) {
         console.error("Profile load error:", err);
@@ -375,6 +378,84 @@
       } finally {
         loadFeedStream();
       }
+    }
+
+    // Explicit event bridge hook for avatar selection management with automated square cropping
+    function bindAvatarPickerActions() {
+      const uploadTriggerBtn = document.getElementById('changeAvatarBtn');
+      const hiddenFileSelector = document.getElementById('avatarFileSelector');
+
+      if (!uploadTriggerBtn || !hiddenFileSelector) return;
+
+      uploadTriggerBtn.replaceWith(uploadTriggerBtn.cloneNode(true));
+      const activeUploadBtn = document.getElementById('changeAvatarBtn');
+
+      activeUploadBtn.addEventListener('click', () => {
+        hiddenFileSelector.click();
+      });
+
+      hiddenFileSelector.addEventListener('change', async function() {
+        if (!this.files || !this.files[0]) return;
+        
+        const selectedFile = this.files[0];
+        const reader = new FileReader();
+
+        activeUploadBtn.textContent = "Processing...";
+        activeUploadBtn.disabled = true;
+
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const targetDimension = 400;
+            canvas.width = targetDimension;
+            canvas.height = targetDimension;
+
+            let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
+
+            if (img.width > img.height) {
+              sourceWidth = img.height;
+              sourceX = (img.width - img.height) / 2;
+            } else if (img.height > img.width) {
+              sourceHeight = img.width;
+              sourceY = (img.height - img.width) / 2;
+            }
+
+            ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, targetDimension, targetDimension);
+            const croppedBase64String = canvas.toDataURL('image/jpeg', 0.85);
+
+            try {
+              const remoteStorageUrl = await uploadBase64ToStorage(croppedBase64String);
+              
+              if (remoteStorageUrl) {
+                const { error: dbUpdateError } = await supabaseClient
+                  .from('profiles')
+                  .update({ avatar_url: remoteStorageUrl })
+                  .eq('id', currentUser.id);
+
+                if (dbUpdateError) throw dbUpdateError;
+
+                currentUser.photo = remoteStorageUrl;
+                document.getElementById('profAvatar').src = remoteStorageUrl;
+                document.getElementById('composerAvatar').src = remoteStorageUrl;
+                document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
+                
+                activeUploadBtn.textContent = "Change Photo";
+              }
+            } catch (err) {
+              console.error("Avatar update execution failed:", err);
+              activeUploadBtn.textContent = "Upload Failed";
+            } finally {
+              activeUploadBtn.disabled = false;
+            }
+          };
+          img.src = e.target.result;
+        };
+
+        reader.readAsDataURL(selectedFile);
+      });
     }
 
     // Pull Global Feed Stream
@@ -465,7 +546,6 @@
             </div>
           `;
 
-          // Immediate Redirection Assignment
           card.querySelectorAll('.clickable-target').forEach(el => {
             el.addEventListener('click', function(e) {
               e.preventDefault();
@@ -475,7 +555,6 @@
             });
           });
 
-          // Dynamic Likes Event Assignment (Optimized for instant toggling without page refreshing)
           card.querySelector(`.like-trigger-btn`).addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -484,7 +563,6 @@
             toggleLikePostInstant(this, pid, isLiked);
           });
 
-          // Dynamic Quote Assignment
           card.querySelector(`.quote-action-trigger`).addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -507,17 +585,14 @@
       const countLabel = btnElement.querySelector('span');
       let currentCount = parseInt(countLabel.textContent) || 0;
       
-      // Update the UI state instantly to make it feel fast
       if (currentlyLiked) {
         btnElement.classList.remove('liked');
         btnElement.setAttribute('data-liked', 'false');
         currentCount = Math.max(0, currentCount - 1);
         countLabel.textContent = currentCount;
         
-        // Clean out cache internally
         cachedGlobalLikesList = cachedGlobalLikesList.filter(l => !(String(l.post_id) === String(postId) && String(l.user_id) === String(currentUser.id)));
         
-        // Execute background remote database cleanup
         supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId)
           .then(({error}) => { if(error) console.error(error); });
       } else {
@@ -526,10 +601,8 @@
         currentCount += 1;
         countLabel.textContent = currentCount;
         
-        // Feed mock tracking item into cache
         cachedGlobalLikesList.push({ user_id: currentUser.id, post_id: postId });
         
-        // Execute background remote sync insert transaction
         supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }])
           .then(({error}) => { if(error) console.error(error); });
       }
@@ -628,7 +701,6 @@
       if (!activeShareTargetPostId || !supabaseClient) return;
 
       try {
-        // Explicit layout mapping verification to handle UUID formatting strings cleanly
         await supabaseClient.from('posts').insert([{
           user_id: currentUser.id,
           name: currentUser.name,
@@ -731,7 +803,7 @@
       renderProfileTimeline();
     }
 
-    // Profile Timeline Stream
+    // Profile Timeline Stream (With Like Counts & Inline Delete Functionality)
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
@@ -763,8 +835,23 @@
             quoteMarkup = `<div class="quote-reference-box" style="margin-left:0;"><div style="color:#94a3b8; font-size:0.85rem;">[Shared Quote Entry]</div></div>`;
           }
 
+          // Calculate like tally parameters out of global cache
+          const postLikesList = cachedGlobalLikesList.filter(l => String(l.post_id) === String(post.id));
+          const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
+
+          // Only render the delete option if viewing your own timeline
+          let deleteButtonMarkup = "";
+          if (String(post.user_id) === String(currentUser.id)) {
+            deleteButtonMarkup = `
+              <button class="action-trigger delete-post-btn" data-postid="${post.id}" style="color: #ef4444; margin-left: auto;">
+                🗑️ Delete
+              </button>
+            `;
+          }
+
           const card = document.createElement('div');
           card.className = 'thread-card';
+          card.id = `profile-post-card-${post.id}`;
           card.innerHTML = `
             <div class="thread-header">
               <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || baseDefaultSvg}">
@@ -776,28 +863,75 @@
             ${textMarkup}
             ${imageMarkup}
             ${quoteMarkup}
+            <div class="post-actions-bar" style="margin-top: 12px; border-top: 1px solid #1e293b; padding-top: 8px;">
+              <button class="action-trigger profile-like-trigger-btn ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
+                ❤️ <span>${postLikesList.length}</span>
+              </button>
+              ${deleteButtonMarkup}
+            </div>
           `;
+
+          // Bind instant like actions onto profile list row items
+          card.querySelector('.profile-like-trigger-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const pid = this.getAttribute('data-postid');
+            const isLiked = this.getAttribute('data-liked') === 'true';
+            toggleLikePostInstant(this, pid, isLiked);
+          });
+
+          // Bind inline deletion event action listener
+          if (String(post.user_id) === String(currentUser.id)) {
+            card.querySelector('.delete-post-btn').addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const pid = this.getAttribute('data-postid');
+              executePostDeletion(pid);
+            });
+          }
+
           feed.appendChild(card);
         });
       } catch(e) { console.error(e); }
     }
 
-    async function logout() {
-  if (supabaseClient) {
-    try {
-      // Force wait for the remote session state and local storage tokens to clear cleanly
-      await supabaseClient.auth.signOut();
-    } catch (err) {
-      console.error("Session clear error:", err);
+    // Handle background database deletion with instant UI cleanup
+    async function executePostDeletion(postId) {
+      if (!postId || !supabaseClient) return;
+      
+      if (!confirm("Are you sure you want to permanently delete this post?")) {
+        return;
+      }
+
+      try {
+        // Optimistically drop out card item layout from current view layout 
+        const targetedCard = document.getElementById(`profile-post-card-${postId}`);
+        if (targetedCard) targetedCard.remove();
+
+        // Perform table query execution logic row drops
+        const { error } = await supabaseClient
+          .from('posts')
+          .delete()
+          .eq('id', postId)
+          .eq('user_id', currentUser.id);
+
+        if (error) throw error;
+      } catch (err) {
+        console.error("Failed to delete post:", err);
+        alert("Could not delete post. Please try again.");
+        renderProfileTimeline(); // Re-sync if it failed
+      }
     }
-    
-    // Clear out our memory user states
-    currentUser = { id: "", name: "Anonymous User", email: "guest@isied.org", cluster: "Unassigned Cluster", church: "District General", photo: "" };
-    
-    // Redirect cleanly to your login landing page
-    window.location.href = "index.html";
-  }
-}
+
+    async function logout() {
+      if (supabaseClient) {
+        try {
+          await supabaseClient.auth.signOut();
+        } catch (err) { console.error("Session clear error:", err); }
+        currentUser = { id: "", name: "Anonymous User", email: "guest@isied.org", cluster: "Unassigned Cluster", church: "District General", photo: "" };
+        window.location.href = "index.html";
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', initUserProfile);
   </script>
