@@ -371,10 +371,11 @@
 
       if (!uploadTriggerBtn || !hiddenFileSelector) return;
 
-      // FIX 1: Clean up previous event listeners on BOTH elements by cloning them
+      // Clean up previous event listeners on BOTH elements by cloning them
       uploadTriggerBtn.replaceWith(uploadTriggerBtn.cloneNode(true));
       hiddenFileSelector.replaceWith(hiddenFileSelector.cloneNode(true));
 
+      // Re-grab the active elements from the DOM
       const activeUploadBtn = document.getElementById('changeAvatarBtn');
       const activeFileSelector = document.getElementById('avatarFileSelector');
 
@@ -438,7 +439,7 @@
               activeUploadBtn.textContent = "Upload Failed";
             } finally {
               activeUploadBtn.disabled = false;
-              activeFileSelector.value = ''; // FIX 2: Clear selection so the same image can be re-selected if needed
+              activeFileSelector.value = ''; // Reset file input selection so the same image can be chosen again if needed
             }
           };
           img.src = e.target.result;
