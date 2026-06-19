@@ -364,91 +364,88 @@
       }
     }
 
-    // Explicit event bridge hook for avatar selection management with Croppie integration
+   // Explicit event bridge hook for avatar selection management with automated square cropping
     function bindAvatarPickerActions() {
       const uploadTriggerBtn = document.getElementById('changeAvatarBtn');
       const hiddenFileSelector = document.getElementById('avatarFileSelector');
 
       if (!uploadTriggerBtn || !hiddenFileSelector) return;
 
+      // FIX 1: Clean up previous event listeners on BOTH elements by cloning them
       uploadTriggerBtn.replaceWith(uploadTriggerBtn.cloneNode(true));
+      hiddenFileSelector.replaceWith(hiddenFileSelector.cloneNode(true));
+
       const activeUploadBtn = document.getElementById('changeAvatarBtn');
-      
+      const activeFileSelector = document.getElementById('avatarFileSelector');
+
       activeUploadBtn.addEventListener('click', () => {
-        hiddenFileSelector.click();
+        activeFileSelector.click();
       });
 
-      hiddenFileSelector.addEventListener('change', function() {
+      activeFileSelector.addEventListener('change', async function() {
         if (!this.files || !this.files[0]) return;
         
         const selectedFile = this.files[0];
         const reader = new FileReader();
 
+        activeUploadBtn.textContent = "Processing...";
+        activeUploadBtn.disabled = true;
+
         reader.onload = function(e) {
-          // Open Modal interface
-          const cropModal = document.getElementById('avatarCropModal');
-          const wrapper = document.getElementById('cropperViewportWrapper');
-          wrapper.innerHTML = '';
-          cropModal.style.display = 'flex';
+          const img = new Image();
+         
+          img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const targetDimension = 400;
+            canvas.width = targetDimension;
+            canvas.height = targetDimension;
 
-          // Instantiating Croppie framework component
-          croppieInstance = new Croppie(wrapper, {
-            viewport: { width: 220, height: 220, type: 'square' },
-            boundary: { width: 300, height: 300 },
-            showZoomer: true
-          });
+            let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
 
-          croppieInstance.bind({
-            url: e.target.result
-          });
+            if (img.width > img.height) {
+              sourceWidth = img.height;
+              sourceX = (img.width - img.height) / 2;
+            } else if (img.height > img.width) {
+              sourceHeight = img.width;
+              sourceY = (img.height - img.width) / 2;
+            }
+
+            ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, targetDimension, targetDimension);
+            const croppedBase64String = canvas.toDataURL('image/jpeg', 0.85);
+
+            try {
+              const remoteStorageUrl = await uploadBase64ToStorage(croppedBase64String);
+              if (remoteStorageUrl) {
+                const { error: dbUpdateError } = await supabaseClient
+                  .from('profiles')
+                  .update({ avatar_url: remoteStorageUrl })
+                  .eq('id', currentUser.id);
+                if (dbUpdateError) throw dbUpdateError;
+
+                currentUser.photo = remoteStorageUrl;
+                document.getElementById('profAvatar').src = remoteStorageUrl;
+                document.getElementById('composerAvatar').src = remoteStorageUrl;
+                document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
+                
+                activeUploadBtn.textContent = "Change Photo";
+              } else {
+                activeUploadBtn.textContent = "Upload Failed";
+              }
+            } catch (err) {
+              console.error("Avatar update execution failed:", err);
+              activeUploadBtn.textContent = "Upload Failed";
+            } finally {
+              activeUploadBtn.disabled = false;
+              activeFileSelector.value = ''; // FIX 2: Clear selection so the same image can be re-selected if needed
+            }
+          };
+          img.src = e.target.result;
         };
 
         reader.readAsDataURL(selectedFile);
       });
-
-      // Bind actions for cropper modal buttons
-      document.getElementById('cancelCropBtn').onclick = function() {
-        destroyCroppieModal();
-      };
-
-      document.getElementById('saveCropBtn').onclick = async function() {
-        if (!croppieInstance) return;
-        
-        activeUploadBtn.textContent = "Processing...";
-        activeUploadBtn.disabled = true;
-        
-        try {
-          const croppedBase64String = await croppieInstance.result({
-            type: 'base64',
-            size: { width: 400, height: 400 },
-            format: 'jpeg',
-            quality: 0.85
-          });
-
-          destroyCroppieModal();
-
-          const remoteStorageUrl = await uploadBase64ToStorage(croppedBase64String);
-          if (remoteStorageUrl) {
-            const { error: dbUpdateError } = await supabaseClient
-              .from('profiles')
-              .update({ avatar_url: remoteStorageUrl })
-              .eq('id', currentUser.id);
-
-            if (dbUpdateError) throw dbUpdateError;
-
-            currentUser.photo = remoteStorageUrl;
-            document.getElementById('profAvatar').src = remoteStorageUrl;
-            document.getElementById('composerAvatar').src = remoteStorageUrl;
-            document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
-          }
-          activeUploadBtn.textContent = "Change Photo";
-        } catch (err) {
-          console.error("Avatar update execution failed:", err);
-          activeUploadBtn.textContent = "Upload Failed";
-        } finally {
-          activeUploadBtn.disabled = false;
-        }
-      };
     }
 
     function destroyCroppieModal() {
