@@ -134,37 +134,8 @@
     </nav>
   </div>
 
- <script>
-    // 1. Cloud Configuration (Renamed to prevent script crashes)
-    const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
-    const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
-    
-    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq"; 
-    const CLOUDINARY_PRESET_NAME = "bac62341-2a40-46f5-913e-c36589a608f6";
-    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-    // Global client instance variable
-    let supabaseClient = null;
-
-    // Safely verify and connect library instance
-    if (typeof supabase !== 'undefined') {
-      supabaseClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_KEY);
-    } else {
-      console.error("Supabase CDN library didn't load from the head tag!");
-    }
-
-    // Global fallback state
-    let currentUser = {
-      name: "Anonymous User", 
-      email: "guest@isied.org", 
-      cluster: "Unassigned Cluster", 
-      church: "District General", 
-      photo: ""
-    };
-
-    let selectedFileObject = null;
-
-    // 2. Navigation Controller (Now fully protected from database errors)
+<script>
+    // 1. Navigation Controller (Moved to absolute top so tabs work instantly no matter what)
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -176,19 +147,52 @@
       const titleElem = document.getElementById('viewTitle');
       if (titleElem) titleElem.textContent = title;
       
-      // Wrap database calls in conditional checks so tabs work even if offline
-      if (supabaseClient) {
-        if (viewId === 'feedView') {
-          loadFeedStream();
-        } else if (viewId === 'profileView') {
-          renderProfileTimeline();
-        }
+      if (viewId === 'feedView') {
+        loadFeedStream();
+      } else if (viewId === 'profileView') {
+        renderProfileTimeline();
       }
     }
 
+    // 2. Cloud Configuration
+    // IMPORTANT: Make sure these match your actual Supabase Dashboard keys!
+    const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
+    const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
+    
+    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq"; 
+    const CLOUDINARY_PRESET_NAME = "bac62341-2a40-46f5-913e-c36589a608f6";
+    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+    let supabaseClient = null;
+
+    try {
+      if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_KEY);
+      }
+    } catch(e) {
+      console.error("Supabase failed to initialize:", e);
+    }
+
+    // Global placeholder data so the UI doesn't break if database fails
+    let currentUser = {
+      name: "Anonymous User", 
+      email: "guest@isied.org", 
+      cluster: "Unassigned Cluster", 
+      church: "District General", 
+      photo: ""
+    };
+
+    let selectedFileObject = null;
+
     // 3. Authenticate User & Fetch Cloud Public Profile
     async function initUserProfile() {
-      if (!supabaseClient) return;
+      if (!supabaseClient) {
+        // Fallback if keys are not configured yet so it doesn't get stuck loading
+        document.getElementById('profName').textContent = currentUser.name;
+        document.getElementById('profEmail').textContent = currentUser.email;
+        document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
+        return;
+      }
       try {
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
         
@@ -225,6 +229,8 @@
 
       } catch (err) {
         console.error("Profile load error:", err.message);
+        // Reset from "Loading Profile..." text if request fails
+        document.getElementById('profName').textContent = currentUser.name;
       } finally {
         loadFeedStream();
       }
@@ -232,8 +238,11 @@
 
     // 4. Load Public Global Newsfeed Feed From Supabase
     async function loadFeedStream() {
-      if (!supabaseClient) return;
       const stream = document.getElementById('newsfeedStream');
+      if (!supabaseClient) {
+        stream.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top:40px;">Please configure your Supabase Credentials.</p>`;
+        return;
+      }
       try {
         const { data: posts, error } = await supabaseClient
           .from('posts')
@@ -398,8 +407,11 @@
 
     // 8. Render Profile Personal Timeline Feed Filtering
     async function renderProfileTimeline() {
-      if (!supabaseClient) return;
       const feedElement = document.getElementById('profileTimelineFeed');
+      if (!supabaseClient) {
+        feedElement.innerHTML = '<p style="color:#64748b; text-align:center;">Configure Supabase to view timeline entries.</p>';
+        return;
+      }
       feedElement.innerHTML = '<p style="color:#64748b; text-align:center;">Filtering your personal updates timeline...</p>';
 
       try {
