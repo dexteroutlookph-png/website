@@ -199,7 +199,7 @@
     </div>
   </div>
 
-  <script>
+ <script>
     // Configuration Keys
     const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
     const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
@@ -300,7 +300,6 @@
         const blob = new Blob([uInt8Array], { type: contentType });
         const pathFileName = `post_media_${Date.now()}_${Math.floor(Math.random() * 100000)}.jpg`;
         
-        // Stored inside 'avatars' public folder/bucket infrastructure
         const { data, error } = await supabaseClient.storage
           .from('avatars')
           .upload(pathFileName, blob, { contentType: contentType });
@@ -375,7 +374,7 @@
       }
     }
 
-    // Pull Global Feed Stream (With dynamic image rendering)
+    // Pull Global Feed Stream (With dynamic image rendering & tolerant likes handling)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) return;
@@ -394,7 +393,13 @@
         }
 
         const { data: profiles } = await supabaseClient.from('profiles').select('*');
-        const { data: globalLikes } = await supabaseClient.from('likes').select('*');
+        
+        // Fault tolerant likes query handler to completely safeguard against 404 table absence errors
+        let globalLikes = [];
+        try {
+          const { data: likesRes, error: likesErr } = await supabaseClient.from('likes').select('*');
+          if (!likesErr && likesRes) globalLikes = likesRes;
+        } catch(lkErr) { console.warn("Likes table parsing bypass:", lkErr); }
 
         const profileMap = {};
         if (profiles) profiles.forEach(p => { profileMap[p.id] = p; });
@@ -410,17 +415,15 @@
             avatarSrc = currentUser.photo;
           }
 
-          const postLikesList = globalLikes?.filter(l => String(l.post_id) === String(post.id)) || [];
+          const postLikesList = globalLikes.filter(l => String(l.post_id) === String(post.id));
           const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
 
-          // Recovery and rendering for older uploaded photo assets
           let imageMarkup = "";
           if (post.image_url) {
             imageMarkup = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:340px; object-fit:cover; display:block;" />`;
           }
 
           let textMarkup = post.content ? `<div class="thread-content">${formatPostContentText(post.content, profiles)}</div>` : '';
-          // Adjust layout spacing if it's a photo-only update
           if (!post.content && post.image_url) {
             imageMarkup = `<div style="padding-left: 50px;">${imageMarkup}</div>`;
           }
@@ -460,9 +463,10 @@
             </div>
           `;
 
-          // Instant Redirection Interceptor Assignment
+          // Immediate Redirection Assignment
           card.querySelectorAll('.clickable-target').forEach(el => {
             el.addEventListener('click', function(e) {
+              e.preventDefault();
               e.stopPropagation();
               const uid = this.getAttribute('data-uid');
               if (uid) navigateToUserById(uid);
@@ -471,6 +475,7 @@
 
           // Dynamic Likes Event Assignment
           card.querySelector(`.action-trigger[data-postid="${post.id}"]`).addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             const pid = this.getAttribute('data-postid');
             const isLiked = this.getAttribute('data-liked') === 'true';
@@ -479,6 +484,7 @@
 
           // Dynamic Quote Assignment
           card.querySelector(`.quote-action-trigger[data-postid="${post.id}"]`).addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             openQuoteModal(
               this.getAttribute('data-postid'),
@@ -575,7 +581,7 @@
           await supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }]);
         }
         loadFeedStream();
-      } catch(e) { console.error(e); }
+      } catch(e) { console.error("Heart save attempt failure:", e); }
     }
 
     // Quote Mechanics
@@ -650,6 +656,7 @@
 
           row.querySelectorAll('.clickable-target').forEach(el => {
             el.addEventListener('click', function(e) {
+              e.preventDefault();
               e.stopPropagation();
               navigateToUserById(this.getAttribute('data-uid'));
             });
@@ -661,7 +668,8 @@
     }
 
     async function navigateToUserById(userId) {
-      if (userId === currentUser.id) { resetToOwnProfile(); return; }
+      if (!userId) return;
+      if (String(userId) === String(currentUser.id)) { resetToOwnProfile(); return; }
       try {
         const { data: p } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
         if (p) {
@@ -682,6 +690,7 @@
     // Profile View UI Syncing Card
     function applyProfileViewUIChange(isOwnProfile) {
       const active = isOwnProfile ? currentUser : selectedTargetProfileUser;
+      if (!active) return;
       
       document.getElementById('profName').textContent = active.name || 'Anonymous';
       document.getElementById('profEmail').textContent = active.email || '';
