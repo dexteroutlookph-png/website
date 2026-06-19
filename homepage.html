@@ -193,68 +193,77 @@ document.getElementById('cancelCropBtn').addEventListener('click', () => {
 });
 
 // Process crop data and push up to the clouds
-document.getElementById('saveCropBtn').addEventListener('click', async function() {
+// Process crop data and push up to the clouds
+document.getElementById('saveCropBtn').addEventListener('click', function() {
   if (!activeCropperInstance) return;
   
   const changeBtn = document.getElementById('changeAvatarBtn');
   const cropModal = document.getElementById('cropperModal');
   
-  try {
-    changeBtn.disabled = true;
-    changeBtn.textContent = "Processing...";
-    cropModal.style.display = 'none'; // Close modal UI during processing
+  changeBtn.disabled = true;
+  changeBtn.textContent = "Processing...";
+  cropModal.style.display = 'none'; // Dismiss modal window during processing
 
-    // Render cropped image selection output down to a high-quality blob file
-    const croppedBlob = await activeCropperInstance.result({
-      type: 'blob',
-      size: 'viewport',
-      format: 'jpeg',
-      circle: false // Force standard raster layer construction (fixes the FormData parameter 2 error)
-    });
-
-    // 1. Build Payload and push to Cloudinary
-    const uploadPayload = new FormData();
-    uploadPayload.append('file', croppedBlob, 'avatar.jpg');
-    uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
-    
-    const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
-      method: 'POST',
-      body: uploadPayload
-    });
-
-    if (!serverResponse.ok) {
-      const errDetails = await serverResponse.json().catch(() => ({}));
-      console.error("Cloudinary Upload Reject Details:", errDetails);
-      throw new Error(errDetails.error?.message || 'Failed to sync asset payload up to Cloudinary storage servers.');
+  // Use the reliable .then() callback chain to guarantee the Blob finishes rendering
+  activeCropperInstance.result({
+    type: 'blob',
+    size: 'viewport',
+    format: 'jpeg'
+  }).then(async function(croppedBlob) {
+    if (!croppedBlob) {
+      throw new Error("Cropper background engine failed to generate an output file.");
     }
-    
-    const parsedResponseData = await serverResponse.json();
-    const cleanSecureUrl = parsedResponseData.secure_url;
 
-    // 2. Sync to Supabase Profiles Table Layout
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    const { error: dbError } = await supabaseClient
-      .from('profiles')
-      .update({ avatar_url: cleanSecureUrl })
-      .eq('id', user.id);
+    try {
+      // 1. Build Payload and push to Cloudinary
+      const uploadPayload = new FormData();
+      uploadPayload.append('file', croppedBlob, 'avatar.jpg');
+      uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
 
-    if (dbError) throw dbError;
+      const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: 'POST',
+        body: uploadPayload
+      });
 
-    // 3. Hot-update current browser views live
-    currentUser.photo = cleanSecureUrl;
-    document.getElementById('profAvatar').src = cleanSecureUrl;
-    if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
-    if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
+      if (!serverResponse.ok) {
+        const errDetails = await serverResponse.json().catch(() => ({}));
+        console.error("Cloudinary Upload Reject Details:", errDetails);
+        throw new Error(errDetails.error?.message || 'Failed to sync asset payload up to Cloudinary storage servers.');
+      }
+      
+      const parsedResponseData = await serverResponse.json();
+      const cleanSecureUrl = parsedResponseData.secure_url;
 
-    alert("Profile photo cropped and synchronized successfully!");
-  } catch (err) {
-    console.error(err);
-    alert(err.message || "An unexpected error broke the profile photo synchronizer channel.");
-  } finally {
+      // 2. Sync to Supabase Profiles Table Layout
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      const { error: dbError } = await supabaseClient
+        .from('profiles')
+        .update({ avatar_url: cleanSecureUrl })
+        .eq('id', user.id);
+
+      if (dbError) throw dbError;
+
+      // 3. Hot-update current browser views live
+      currentUser.photo = cleanSecureUrl;
+      document.getElementById('profAvatar').src = cleanSecureUrl;
+      if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
+      if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
+
+      alert("Profile photo cropped and synchronized successfully!");
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "An unexpected error broke the profile photo synchronizer channel.");
+    } finally {
+      changeBtn.disabled = false;
+      changeBtn.textContent = "Change Photo";
+      document.getElementById('avatarFileSelector').value = '';
+    }
+  }).catch(function(cropErr) {
+    console.error("Cropping extraction failure:", cropErr);
+    alert("Failed to render the cropped photo region.");
     changeBtn.disabled = false;
     changeBtn.textContent = "Change Photo";
-    document.getElementById('avatarFileSelector').value = '';
-  }
+  });
 });
     // 1. Navigation Controller (Moved to absolute top so tabs work instantly no matter what)
     function switchView(viewId, title, element) {
