@@ -364,12 +364,12 @@
       }
     }
 
-   // Global instance tracker for the Croppie engine
+  // Global instance tracker for the Croppie engine
     let activeCroppieInstance = null;
 
-    // Cloudinary Setup Configurations
-    const CLOUDINARY_UPLOAD_PRESET = "youthsphere"; 
-    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq";
+    // Cloudinary Setup Configurations (Make sure to replace these with your actual keys)
+    const CLOUDINARY_UPLOAD_PRESET = "YOUR_CLOUDINARY_PRESET"; 
+    const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME";
 
     // Cloudinary Base64 Streaming Engine
     async function uploadBase64ToCloudinary(base64Str) {
@@ -417,22 +417,27 @@
         const reader = new FileReader();
 
         reader.onload = function(e) {
-          // Open the cropping modal view
+          // 1. Reveal the overlay container first
           document.getElementById('cropperOverlayModal').style.display = 'flex';
+          
           const container = document.getElementById('croppieViewportContainer');
-          container.innerHTML = ''; // Sanitize boundary markup
+          container.innerHTML = ''; // Clear out old markup completely
 
-          // Bind Croppie configuration explicitly to build a perfect square viewport
-          activeCroppieInstance = new Croppie(container, {
-            viewport: { width: 220, height: 220, type: 'square' },
-            boundary: { width: 300, height: 300 },
-            enableOrientation: true
-          });
+          // 2. FIX: Wait 100ms to allow the browser layout engine to paint the modal.
+          // This gives Croppie real dimensions so it doesn't render a black box!
+          setTimeout(() => {
+            activeCroppieInstance = new Croppie(container, {
+              viewport: { width: 220, height: 220, type: 'square' },
+              boundary: { width: 300, height: 300 },
+              enableOrientation: true,
+              enableZoom: true
+            });
 
-          // Feed user raw image data into the view engine
-          activeCroppieInstance.bind({
-            url: e.target.result
-          });
+            // Feed your image file directly into the layout viewport
+            activeCroppieInstance.bind({
+              url: e.target.result
+            });
+          }, 100);
         };
 
         reader.readAsDataURL(selectedFile);
@@ -442,7 +447,7 @@
       document.getElementById('cancelCropBtn').onclick = function() {
         document.getElementById('cropperOverlayModal').style.display = 'none';
         if (activeCroppieInstance) activeCroppieInstance.destroy();
-        activeFileSelector.value = ''; // Evict internal cache
+        activeFileSelector.value = ''; 
       };
 
       // Handle Apply Crop & Save Pipeline
@@ -454,7 +459,7 @@
         document.getElementById('cropperOverlayModal').style.display = 'none';
 
         try {
-          // Extract the cropped canvas area out as a high-quality JPEG base64 string
+          // Extract the cropped image canvas area out as a high-quality JPEG base64 string
           const croppedBase64 = await activeCroppieInstance.result({
             type: 'base64',
             size: { width: 400, height: 400 },
@@ -468,7 +473,7 @@
           const remoteStorageUrl = await uploadBase64ToCloudinary(croppedBase64);
           
           if (remoteStorageUrl) {
-            // Write back down to Supabase Profile database record
+            // Write back to Supabase Profiles database record
             const { error: dbUpdateError } = await supabaseClient
               .from('profiles')
               .update({ avatar_url: remoteStorageUrl })
@@ -476,13 +481,13 @@
             
             if (dbUpdateError) throw dbUpdateError;
 
-            // Immediately rewrite global state nodes and live app elements
+            // Immediately rewrite global state nodes and live app preview elements
             currentUser.photo = remoteStorageUrl;
             document.getElementById('profAvatar').src = remoteStorageUrl;
             document.getElementById('composerAvatar').src = remoteStorageUrl;
             document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
             
-            // Re-sync feeds to dynamically reflect changes without a hard refresh
+            // Re-sync feeds to dynamically reflect changes across all posts instantly without a hard refresh
             loadFeedStream();
             
             activeUploadBtn.textContent = "Change Photo";
@@ -494,7 +499,7 @@
           activeUploadBtn.textContent = "Upload Failed";
         } finally {
           activeUploadBtn.disabled = false;
-          activeFileSelector.value = ''; // Clean the input node
+          activeFileSelector.value = ''; 
         }
       };
     }
