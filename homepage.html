@@ -236,10 +236,10 @@
         loadNotificationsPipeline();
         clearNotificationBadge();
       } else if (viewId === 'profileView') {
-        if(!selectedTargetProfileUser) {
-          resetToOwnProfile();
+        if (selectedTargetProfileUser) {
+         renderProfileTimeline();
         } else {
-          renderProfileTimeline();
+         applyProfileViewUIChange(true); // Force-binds your currentUser details to the UI fields
         }
       }
     }
