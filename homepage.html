@@ -795,7 +795,7 @@
         return;
       }
 
-      // 2. IMMEDIATELY remove it from the website UI so it disappears instantly
+      // 2. IMMEDIATELY remove it from the website UI so it disappears instantly for the user
       const targetedTimelineCard = document.getElementById(`profile-post-card-${postId}`);
       if (targetedTimelineCard) {
         targetedTimelineCard.remove();
@@ -806,15 +806,20 @@
         targetedHomeFeedCard.remove();
       }
 
-      // 3. Delete it from the database in the background
+      // 3. Convert postId to the proper type and delete from Supabase
       try {
+        // Try parsing as an integer first. If your DB uses numbers for post IDs, this fixes the mismatch.
+        // If your DB uses UUID strings, it will remain unchanged.
+        const parsedPostId = isNaN(postId) ? postId : Number(postId);
+
         const { error } = await supabaseClient
           .from('posts')
           .delete()
-          .eq('id', postId)
-          .eq('user_id', currentUser.id);
+          .eq('id', parsedPostId)
+          .eq('user_id', String(currentUser.id).trim());
 
         if (error) throw error;
+        console.log("Successfully deleted post from database:", parsedPostId);
       } catch (err) {
         console.error("Failed to delete post from database:", err);
         alert("The post was hidden, but could not be deleted from the database. Re-syncing...");
