@@ -187,7 +187,6 @@
     // 3. Authenticate User & Fetch Cloud Public Profile
     async function initUserProfile() {
       if (!supabaseClient) {
-        // Fallback if keys are not configured yet so it doesn't get stuck loading
         document.getElementById('profName').textContent = currentUser.name;
         document.getElementById('profEmail').textContent = currentUser.email;
         document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
@@ -201,20 +200,21 @@
           return;
         }
 
+        // Selecting only columns that exist explicitly in your table layout
         const { data: profile, error: dbError } = await supabaseClient
           .from('profiles')
-          .select('name, email, cluster, church, photo') 
+          .select('full_name, cluster, local_church, avatar_url') 
           .eq('id', user.id)
           .single();
 
         if (dbError) throw dbError;
 
         if (profile) {
-          currentUser.name = profile.name || currentUser.name;
-          currentUser.email = profile.email || user.email || currentUser.email;
+          currentUser.name = profile.full_name || currentUser.name;
+          currentUser.email = user.email || currentUser.email; // Safely pulled directly from Supabase Auth
           currentUser.cluster = profile.cluster || currentUser.cluster;
-          currentUser.church = profile.church || currentUser.church;
-          currentUser.photo = profile.photo || currentUser.photo;
+          currentUser.church = profile.local_church || currentUser.church;
+          currentUser.photo = profile.avatar_url || currentUser.photo;
         }
 
         document.getElementById('profName').textContent = currentUser.name;
@@ -229,7 +229,6 @@
 
       } catch (err) {
         console.error("Profile load error:", err.message);
-        // Reset from "Loading Profile..." text if request fails
         document.getElementById('profName').textContent = currentUser.name;
       } finally {
         loadFeedStream();
