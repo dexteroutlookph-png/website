@@ -1,219 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouthSphere | Home</title>
-  <link rel="stylesheet" href="styles.css">
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
-  <style>
-    body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; font-family: system-ui, -apple-system, sans-serif; color: #fff; }
-    .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; }
-    .app-header { position: sticky; top: 0; background: rgba(7, 20, 38, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100; padding: 16px; text-align: center; border-bottom: 1px solid #1e293b; }
-    .app-header h2 { margin: 0; font-size: 1.3rem; color: #fff; font-weight: 700; }
-    .threads-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-top: 1px solid #1e293b; display: flex; justify-content: space-around; padding: 16px 0; z-index: 200; }
-    .nav-item { background: none; border: none; color: #64748b; font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 20px; transition: all 0.2s ease; position: relative; }
-    .nav-item:hover { color: #fff; }
-    .nav-item.active { color: #6366f1; background: rgba(99, 102, 241, 0.1); }
-    .badge-dot { position: absolute; top: 6px; right: 4px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; display: none; }
-    
-    .app-view { display: none; padding: 16px; flex-grow: 1; }
-    .app-view.active { display: block; animation: feedFadeIn 0.2s ease-out; }
-    @keyframes feedFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    .thread-card, .ui-panel-card { background: #1e293b; padding: 18px; border-radius: 16px; margin-bottom: 14px; border: 1px solid #334155; }
-    .thread-header { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
-    .thread-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #4338ca; border: 1.5px solid #4f46e5; }
-    .clickable-target { cursor: pointer; }
-    .clickable-target:hover { text-decoration: underline; color: #6366f1 !important; }
-    .thread-user { font-weight: 700; color: #fff; font-size: 0.95rem; }
-    .thread-content { font-size: 1rem; color: #e2e8f0; line-height: 1.5; padding-left: 50px; word-break: break-word; }
-    
-    .mention-link { color: #38bdf8; font-weight: 600; cursor: pointer; text-decoration: none; }
-    .mention-link:hover { text-decoration: underline; }
-    .post-actions-bar { display: flex; gap: 20px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #243249; font-size: 0.85rem; color: #94a3b8; padding-left: 50px; }
-    .action-trigger { display: flex; align-items: center; gap: 6px; cursor: pointer; background: none; border: none; color: inherit; font-size: inherit; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
-    .action-trigger:hover { background: rgba(255,255,255,0.05); color: #fff; }
-    .action-trigger.liked { color: #f43f5e; font-weight: bold; }
-    .quote-reference-box { background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; margin: 10px 0 0 50px; font-size: 0.9rem; }
-    
-    .inline-composer { background: #11192e; border: 1px solid #243249; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
-    .composer-layout { display: flex; gap: 12px; }
-    .composer-fields { flex-grow: 1; }
-    .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; font-family: inherit; }
-    .inline-composer textarea:focus { outline: none; }
-    .composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
-    .primary-button { background: #6366f1; color: white; border: none; padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor: pointer; }
-    .primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .profile-hero { text-align: center; padding: 24px 0 12px; }
-    .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; background: #4338ca; }
-    .profile-hero h2 { margin: 0 0 6px 0; color: #fff; font-size: 1.4rem; }
-    .profile-meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 4px; }
-    
-    .user-dir-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #1e293b; }
-    .user-dir-item:last-child { border-bottom: none; }
-    .user-dir-info { display: flex; align-items: center; gap: 12px; }
-    .view-profile-action-btn { background: #4f46e5; border: none; color: #fff; font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 14px; cursor: pointer; }
-    .view-profile-action-btn:hover { background: #6366f1; }
-
-    /* Media Upload Attachments */
-    .preview-attachment-container { display: none; position: relative; margin-top: 10px; max-width: 120px; }
-    .preview-attachment-img { width: 120px; height: 120px; border-radius: 12px; object-fit: cover; border: 1px solid #334155; }
-    .remove-attachment-btn { position: absolute; top: -6px; right: -6px; background: #ef4444; border: none; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; font-weight: bold; }
-    .media-attach-label { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #a5b4fc; background: rgba(99, 102, 241, 0.1); padding: 6px 12px; border-radius: 14px; border: 1px solid rgba(99,102,241,0.2); }
-    .media-attach-label:hover { background: rgba(99,102,241,0.2); color: #fff; }
-  </style>
-</head>
-<body>
-
-  <div class="app-container">
-    <header class="app-header"><h2 id="viewTitle">YouthSphere</h2></header>
-
-    <main id="feedView" class="app-view active">
-      <div class="inline-composer">
-        <form id="inlineThreadForm">
-          <div class="composer-layout">
-            <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User">
-            <div class="composer-fields">
-              <textarea id="inlineThreadContent" placeholder="Share a church update or post a photo..."></textarea>
-              
-              <div class="preview-attachment-container" id="feedImgPreviewBox">
-                <img class="preview-attachment-img" id="feedImgPreviewElement" src="">
-                <button type="button" class="remove-attachment-btn" onclick="clearSelectedComposerFile('feed')">×</button>
-              </div>
-            </div>
-          </div>
-          <div class="composer-actions">
-            <div>
-              <label class="media-attach-label">
-                📷 Add Photo
-                <input type="file" id="feedMediaFileSelector" accept="image/*" style="display:none;" onchange="processComposerFileSelection(this, 'feed')" />
-              </label>
-            </div>
-            <button type="submit" class="primary-button" id="publishBtn">Post Thread</button>
-          </div>
-        </form>
-        <div id="inlinePostStatus" style="margin-top:8px; font-size:0.85rem; padding-left:50px; color:#a5b4fc;"></div>
-      </div>
-      <div id="newsfeedStream"><p style="color: #94a3b8; text-align: center;">Syncing feed...</p></div>
-    </main>
-
-    <section id="eventsView" class="app-view">
-      <div class="ui-panel-card">
-        <h3>District Events</h3>
-        <p style="color:#94a3b8; font-size:0.9rem;">Upcoming youth gathers across ISIED.</p>
-      </div>
-    </section>
-
-    <section id="peopleView" class="app-view">
-      <div class="ui-panel-card">
-        <h3>Community Directory</h3>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:16px;">Connect with all registered users in the Sphere.</p>
-        <div id="peopleDirectoryList">
-          <p style="color: #94a3b8; text-align: center;">Loading community dashboard...</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="notificationsView" class="app-view">
-      <div class="ui-panel-card">
-        <h3>Activity Pipeline</h3>
-        <div id="notificationsWrapperFeed">
-          <p style="color:#94a3b8; text-align:center;">Syncing notifications...</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="profileView" class="app-view">
-      <div class="ui-panel-card" style="margin-bottom: 16px;">
-        <div id="profileContextBanner" style="display:none; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); padding:10px; border-radius:8px; margin-bottom:16px; text-align:left; font-size:0.85rem; color:#a5b4fc; justify-content:space-between; align-items:center;">
-          <span>Viewing peer timeline</span>
-          <button onclick="resetToOwnProfile()" style="background:#243249; border:none; color:#fff; font-size:0.75rem; padding:4px 10px; border-radius:4px; cursor:pointer;">My Profile</button>
-        </div>
-
-        <div class="profile-hero">
-          <img class="large-avatar" id="profAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Avatar">
-          <div style="margin-top: 10px;" id="avatarControlWrapper">
-            <input type="file" id="avatarFileSelector" accept="image/*" style="display: none;" />
-            <button type="button" id="changeAvatarBtn" style="background: #243249; color: #fff; border: 1px solid #3b4f6e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Change Photo</button>
-          </div>
-          <h2 id="profName">Loading Profile...</h2>
-          <div class="profile-meta" id="profEmail">loading@email.com</div>
-          <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Details</div>
-        </div>
-        <div style="border-top:1px solid #334155; padding-top:16px; text-align:center;" id="profileSignOutRow">
-          <button onclick="logout()" class="primary-button" style="background:#ef4444;">Sign Out</button>
-        </div>
-      </div>
-
-      <div class="ui-panel-card" id="profilePostComposerCard" style="margin-bottom: 16px; padding: 16px;">
-        <form id="profilePostForm">
-          <div style="display: flex; gap: 12px; align-items: flex-start;">
-            <img class="thread-avatar" id="profileComposerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Mini Avatar" style="width:36px; height:36px;" />
-            <div style="flex: 1;">
-              <textarea id="profilePostContent" placeholder="Share an update or timeline photo..." style="width:100%; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; min-height: 40px; resize: none; outline: none; box-sizing:border-box; font-family: inherit;"></textarea>
-              
-              <div class="preview-attachment-container" id="profileImgPreviewBox">
-                <img class="preview-attachment-img" id="profileImgPreviewElement" src="">
-                <button type="button" class="remove-attachment-btn" onclick="clearSelectedComposerFile('profile')">×</button>
-              </div>
-            </div>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top:1px solid #243249; padding-top:10px;">
-            <label class="media-attach-label">
-              📷 Add Photo
-              <input type="file" id="profileMediaFileSelector" accept="image/*" style="display:none;" onchange="processComposerFileSelection(this, 'profile')" />
-            </label>
-            <button type="submit" class="primary-button submit-post-btn">Post</button>
-          </div>
-        </form>
-      </div>
-
-      <h3 id="timelineHeadingText" style="font-size: 1rem; font-weight: 700; color: #94a3b8; margin: 24px 0 12px 4px; text-transform: uppercase;">My Timeline</h3>
-      <div id="profileTimelineFeed">
-        <p style="color: #94a3b8; text-align: center;">Loading timeline entries...</p>
-      </div>
-    </section>
-
-    <nav class="threads-nav">
-      <button class="nav-item active" id="navBtnFeed" onclick="switchView('feedView', 'Home Feed', this)">Feed</button>
-      <button class="nav-item" id="navBtnEvents" onclick="switchView('eventsView', 'Events', this)">Events</button>
-      <button class="nav-item" id="navBtnPeople" onclick="switchView('peopleView', 'People', this)">People</button>
-      <button class="nav-item" id="navBtnNotif" onclick="switchView('notificationsView', 'Notifications', this)">Alerts<span class="badge-dot" id="notifDot"></span></button>
-      <button class="nav-item" id="navBtnProfile" onclick="switchView('profileView', 'Profile', this)">Profile</button>
-    </nav>
-  </div>
-
-  <div id="quoteShareModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:480px;">
-      <h3 style="margin-top:0; color:#fff;">Quote Share Thread</h3>
-      <textarea id="quoteModalCommentInput" placeholder="Add your perspective..." style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; color:#fff; min-height:60px; resize:none; font-family:inherit; outline:none; margin-bottom:12px;"></textarea>
-      <div id="quoteModalTargetPreview" style="background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; font-size: 0.9rem;"></div>
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
-        <button onclick="closeQuoteModal()" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer;">Cancel</button>
-        <button id="submitQuoteShareBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:bold;">Share</button>
-      </div>
-    </div>
-  </div>
-
- <script>
+<script>
     // Configuration Keys
     const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
     const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
 
     let supabaseClient = null;
     let selectedTargetProfileUser = null; 
-    let activeShareTargetPostId = null;
 
     // Local Base64 staging variables
     let stagedFeedFileBase64 = null;
     let stagedProfileFileBase64 = null;
-    
-    // In-memory cache to maintain smooth state transitions
-    let cachedGlobalLikesList = [];
 
     try {
       if (typeof supabase !== 'undefined') {
@@ -368,7 +163,7 @@
         document.getElementById('composerAvatar').src = currentUser.photo || baseDefaultSvg;
         document.getElementById('profileComposerAvatar').src = currentUser.photo || baseDefaultSvg;
 
-        // Securely bind the Avatar Picker hooks right here once profiles load
+        // Securely bind the Avatar Picker hooks
         bindAvatarPickerActions();
 
         applyProfileViewUIChange(true);
@@ -380,7 +175,7 @@
       }
     }
 
-    // Explicit event bridge hook for avatar selection management with automated square cropping
+    // Avatar Picker with Centered Square Cropper
     function bindAvatarPickerActions() {
       const uploadTriggerBtn = document.getElementById('changeAvatarBtn');
       const hiddenFileSelector = document.getElementById('avatarFileSelector');
@@ -477,12 +272,6 @@
         }
 
         const { data: profiles } = await supabaseClient.from('profiles').select('*');
-        
-        try {
-          const { data: likesRes, error: likesErr } = await supabaseClient.from('likes').select('*');
-          if (!likesErr && likesRes) cachedGlobalLikesList = likesRes;
-        } catch(lkErr) { console.warn("Likes table parsing bypass:", lkErr); }
-
         const profileMap = {};
         if (profiles) profiles.forEach(p => { profileMap[p.id] = p; });
 
@@ -497,9 +286,6 @@
             avatarSrc = currentUser.photo;
           }
 
-          const postLikesList = cachedGlobalLikesList.filter(l => String(l.post_id) === String(post.id));
-          const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
-
           let imageMarkup = "";
           if (post.image_url) {
             imageMarkup = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:340px; object-fit:cover; display:block;" />`;
@@ -508,18 +294,6 @@
           let textMarkup = post.content ? `<div class="thread-content">${formatPostContentText(post.content, profiles)}</div>` : '';
           if (!post.content && post.image_url) {
             imageMarkup = `<div style="padding-left: 50px;">${imageMarkup}</div>`;
-          }
-
-          let quoteMarkup = "";
-          if (post.parent_post_id) {
-            const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
-            if (parent) {
-              quoteMarkup = `
-                <div class="quote-reference-box">
-                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name || 'User'}</div>
-                  <div style="color:#94a3b8;">${parent.content || ''}</div>
-                </div>`;
-            }
           }
 
           const card = document.createElement('div');
@@ -535,15 +309,6 @@
             </div>
             ${textMarkup}
             ${imageMarkup}
-            ${quoteMarkup}
-            <div class="post-actions-bar">
-              <button class="action-trigger like-trigger-btn ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
-                ❤️ <span>${postLikesList.length}</span>
-              </button>
-              <button class="action-trigger quote-action-trigger" data-postid="${post.id}" data-author="${displayName}" data-content="${(post.content || '').replace(/"/g, '&quot;')}" style="cursor:pointer;">
-                🔄 Share Quote
-              </button>
-            </div>
           `;
 
           card.querySelectorAll('.clickable-target').forEach(el => {
@@ -555,57 +320,9 @@
             });
           });
 
-          card.querySelector(`.like-trigger-btn`).addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const pid = this.getAttribute('data-postid');
-            const isLiked = this.getAttribute('data-liked') === 'true';
-            toggleLikePostInstant(this, pid, isLiked);
-          });
-
-          card.querySelector(`.quote-action-trigger`).addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            openQuoteModal(
-              this.getAttribute('data-postid'),
-              this.getAttribute('data-author'),
-              this.getAttribute('data-content')
-            );
-          });
-
           stream.appendChild(card);
         });
       } catch (err) { console.error(err); }
-    }
-
-    // Instant UI Update Layer for Hearts (No refresh cycle)
-    async function toggleLikePostInstant(btnElement, postId, currentlyLiked) {
-      if (!supabaseClient || !currentUser.id) return;
-      
-      const countLabel = btnElement.querySelector('span');
-      let currentCount = parseInt(countLabel.textContent) || 0;
-      
-      if (currentlyLiked) {
-        btnElement.classList.remove('liked');
-        btnElement.setAttribute('data-liked', 'false');
-        currentCount = Math.max(0, currentCount - 1);
-        countLabel.textContent = currentCount;
-        
-        cachedGlobalLikesList = cachedGlobalLikesList.filter(l => !(String(l.post_id) === String(postId) && String(l.user_id) === String(currentUser.id)));
-        
-        supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId)
-          .then(({error}) => { if(error) console.error(error); });
-      } else {
-        btnElement.classList.add('liked');
-        btnElement.setAttribute('data-liked', 'true');
-        currentCount += 1;
-        countLabel.textContent = currentCount;
-        
-        cachedGlobalLikesList.push({ user_id: currentUser.id, post_id: postId });
-        
-        supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }])
-          .then(({error}) => { if(error) console.error(error); });
-      }
     }
 
     // Submit Feed Post
@@ -678,40 +395,6 @@
         document.getElementById('profilePostContent').value = '';
         clearSelectedComposerFile('profile');
         renderProfileTimeline();
-      } catch (err) { console.error(err); }
-    });
-
-    // Quote Mechanics
-    function openQuoteModal(postId, authorName, textSnippet) {
-      activeShareTargetPostId = postId;
-      document.getElementById('quoteModalTargetPreview').innerHTML = `
-        <div style="font-weight:700; font-size:0.8rem; color:#6366f1;">@${authorName}</div>
-        <div style="color:#94a3b8; font-size:0.85rem;">${textSnippet || '[Media Update]'}</div>
-      `;
-      document.getElementById('quoteShareModal').style.display = 'flex';
-    }
-
-    function closeQuoteModal() {
-      document.getElementById('quoteShareModal').style.display = 'none';
-      document.getElementById('quoteModalCommentInput').value = '';
-    }
-
-    document.getElementById('submitQuoteShareBtn').addEventListener('click', async function() {
-      const commentary = document.getElementById('quoteModalCommentInput').value.trim();
-      if (!activeShareTargetPostId || !supabaseClient) return;
-
-      try {
-        await supabaseClient.from('posts').insert([{
-          user_id: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          content: commentary || null,
-          parent_post_id: activeShareTargetPostId, 
-          avatar_url: currentUser.photo,
-          createdat: new Date().toISOString()
-        }]);
-        closeQuoteModal();
-        switchView('feedView', 'Home Feed', document.getElementById('navBtnFeed'));
       } catch (err) { console.error(err); }
     });
 
@@ -803,7 +486,7 @@
       renderProfileTimeline();
     }
 
-    // Profile Timeline Stream (With Like Counts & Inline Delete Functionality)
+    // Profile Timeline Stream
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
@@ -830,22 +513,14 @@
             imageMarkup = `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:300px; object-fit:cover; display:block;" />`;
           }
 
-          let quoteMarkup = "";
-          if (post.parent_post_id) {
-            quoteMarkup = `<div class="quote-reference-box" style="margin-left:0;"><div style="color:#94a3b8; font-size:0.85rem;">[Shared Quote Entry]</div></div>`;
-          }
-
-          // Calculate like tally parameters out of global cache
-          const postLikesList = cachedGlobalLikesList.filter(l => String(l.post_id) === String(post.id));
-          const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
-
-          // Only render the delete option if viewing your own timeline
           let deleteButtonMarkup = "";
           if (String(post.user_id) === String(currentUser.id)) {
             deleteButtonMarkup = `
-              <button class="action-trigger delete-post-btn" data-postid="${post.id}" style="color: #ef4444; margin-left: auto;">
-                🗑️ Delete
-              </button>
+              <div class="post-actions-bar" style="margin-top: 12px; border-top: 1px solid #1e293b; padding-top: 8px;">
+                <button class="action-trigger delete-post-btn" data-postid="${post.id}" data-imgurl="${post.image_url || ''}" style="color: #ef4444; margin-left: auto; cursor: pointer;">
+                  🗑️ Delete Post
+                </button>
+              </div>
             `;
           }
 
@@ -862,31 +537,14 @@
             </div>
             ${textMarkup}
             ${imageMarkup}
-            ${quoteMarkup}
-            <div class="post-actions-bar" style="margin-top: 12px; border-top: 1px solid #1e293b; padding-top: 8px;">
-              <button class="action-trigger profile-like-trigger-btn ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
-                ❤️ <span>${postLikesList.length}</span>
-              </button>
-              ${deleteButtonMarkup}
-            </div>
+            ${deleteButtonMarkup}
           `;
 
-          // Bind instant like actions onto profile list row items
-          card.querySelector('.profile-like-trigger-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const pid = this.getAttribute('data-postid');
-            const isLiked = this.getAttribute('data-liked') === 'true';
-            toggleLikePostInstant(this, pid, isLiked);
-          });
-
-          // Bind inline deletion event action listener
           if (String(post.user_id) === String(currentUser.id)) {
             card.querySelector('.delete-post-btn').addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
-              const pid = this.getAttribute('data-postid');
-              executePostDeletion(pid);
+              executePostDeletion(this.getAttribute('data-postid'), this.getAttribute('data-imgurl'));
             });
           }
 
@@ -895,20 +553,34 @@
       } catch(e) { console.error(e); }
     }
 
-    // Handle background database deletion with instant UI cleanup
-    async function executePostDeletion(postId) {
+    // Complete Deletion Pipeline (Database Row Drop + Storage Bucket File Wipe)
+    async function executePostDeletion(postId, imageUrl) {
       if (!postId || !supabaseClient) return;
       
-      if (!confirm("Are you sure you want to permanently delete this post?")) {
+      if (!confirm("Are you sure you want to permanently delete this post? This will also remove any attached media from storage.")) {
         return;
       }
 
       try {
-        // Optimistically drop out card item layout from current view layout 
+        // 1. If an image exists, parse out its exact filename and clear it from the bucket
+        if (imageUrl && imageUrl.includes('/avatars/')) {
+          try {
+            const urlParts = imageUrl.split('/avatars/');
+            const storageFilename = urlParts[urlParts.length - 1]; // Pulls the unique string name
+            
+            if (storageFilename) {
+              await supabaseClient.storage.from('avatars').remove([storageFilename]);
+            }
+          } catch(storageErr) {
+            console.warn("Storage asset sanitation bypass error:", storageErr);
+          }
+        }
+
+        // 2. Remove layout component item from current DOM interface view instantly
         const targetedCard = document.getElementById(`profile-post-card-${postId}`);
         if (targetedCard) targetedCard.remove();
 
-        // Perform table query execution logic row drops
+        // 3. Drop relational table entry row inside Supabase
         const { error } = await supabaseClient
           .from('posts')
           .delete()
@@ -917,9 +589,9 @@
 
         if (error) throw error;
       } catch (err) {
-        console.error("Failed to delete post:", err);
-        alert("Could not delete post. Please try again.");
-        renderProfileTimeline(); // Re-sync if it failed
+        console.error("Failed to execute post deletion flow:", err);
+        alert("Could not complete delete transaction safely. Re-syncing stream.");
+        renderProfileTimeline();
       }
     }
 
@@ -935,5 +607,3 @@
 
     document.addEventListener('DOMContentLoaded', initUserProfile);
   </script>
-</body>
-</html>
