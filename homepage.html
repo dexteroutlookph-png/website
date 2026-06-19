@@ -134,8 +134,37 @@
     </nav>
   </div>
 
-  <script>
-    // 1. Navigation Controller
+ <script>
+    // 1. Cloud Configuration (Renamed to prevent script crashes)
+    const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
+    const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
+    
+    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq"; 
+    const CLOUDINARY_PRESET_NAME = "bac62341-2a40-46f5-913e-c36589a608f6";
+    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+    // Global client instance variable
+    let supabaseClient = null;
+
+    // Safely verify and connect library instance
+    if (typeof supabase !== 'undefined') {
+      supabaseClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_KEY);
+    } else {
+      console.error("Supabase CDN library didn't load from the head tag!");
+    }
+
+    // Global fallback state
+    let currentUser = {
+      name: "Anonymous User", 
+      email: "guest@isied.org", 
+      cluster: "Unassigned Cluster", 
+      church: "District General", 
+      photo: ""
+    };
+
+    let selectedFileObject = null;
+
+    // 2. Navigation Controller (Now fully protected from database errors)
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -147,52 +176,30 @@
       const titleElem = document.getElementById('viewTitle');
       if (titleElem) titleElem.textContent = title;
       
-      if (viewId === 'feedView') {
-        loadFeedStream();
-      } else if (viewId === 'profileView') {
-        renderProfileTimeline();
+      // Wrap database calls in conditional checks so tabs work even if offline
+      if (supabaseClient) {
+        if (viewId === 'feedView') {
+          loadFeedStream();
+        } else if (viewId === 'profileView') {
+          renderProfileTimeline();
+        }
       }
     }
 
-    // 2. Cloud Configuration (Supabase + Cloudinary)
-    // IMPORTANT: Swap out these placeholder values with your exact Supabase URL and Anon Key
-    const SUPABASE_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
-    
-    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq"; 
-    const CLOUDINARY_PRESET_NAME = "bac62341-2a40-46f5-913e-c36589a608f6";
-    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-    // Initialize the Supabase Client
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Global placeholder state until cloud auth loads
-    let currentUser = {
-      name: "Anonymous User", 
-      email: "guest@isied.org", 
-      cluster: "Unassigned Cluster", 
-      church: "District General", 
-      photo: ""
-    };
-
-    let selectedFileObject = null;
-
     // 3. Authenticate User & Fetch Cloud Public Profile
     async function initUserProfile() {
+      if (!supabaseClient) return;
       try {
-        // Find out who is currently signed into the client session
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
         
         if (authError || !user) {
-          console.warn("No cloud active session found. Redirecting to access portal.");
-          window.location.href = 'index.html';
+          console.warn("No active session found.");
           return;
         }
 
-        // Fetch their public profile records across the global database
-        const { data: profile, error: dbError } = await supabase
+        const { data: profile, error: dbError } = await supabaseClient
           .from('profiles')
-          .select('name, email, cluster, church, photo') // Pulling exact column configurations
+          .select('name, email, cluster, church, photo') 
           .eq('id', user.id)
           .single();
 
@@ -206,7 +213,6 @@
           currentUser.photo = profile.photo || currentUser.photo;
         }
 
-        // Hydrate frontend fields cleanly with cloud metadata
         document.getElementById('profName').textContent = currentUser.name;
         document.getElementById('profEmail').textContent = currentUser.email;
         document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
@@ -218,19 +224,18 @@
         }
 
       } catch (err) {
-        console.error("Supabase Profile hydration failed:", err.message);
+        console.error("Profile load error:", err.message);
       } finally {
-        // Once profile hydrates, paint streams
         loadFeedStream();
       }
     }
 
     // 4. Load Public Global Newsfeed Feed From Supabase
     async function loadFeedStream() {
+      if (!supabaseClient) return;
       const stream = document.getElementById('newsfeedStream');
       try {
-        // Pull posts table directly from database sorted from newest to oldest
-        const { data: posts, error } = await supabase
+        const { data: posts, error } = await supabaseClient
           .from('posts')
           .select('*')
           .order('createdat', { ascending: false });
@@ -273,6 +278,7 @@
     // 5. Submit New Thread Post (Home tab)
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      if (!supabaseClient) return;
       const text = document.getElementById('inlineThreadContent');
       const status = document.getElementById('inlinePostStatus');
       const btn = document.getElementById('publishBtn');
@@ -282,7 +288,7 @@
       btn.disabled = true;
 
       try {
-        const { error } = await supabase.from('posts').insert([
+        const { error } = await supabaseClient.from('posts').insert([
           { 
             name: currentUser.name, 
             email: currentUser.email, 
@@ -337,6 +343,7 @@
     // 7. Profile Interactive Form Submission + Cloudinary Engine
     document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      if (!supabaseClient) return;
       const textVal = profilePostContent.value.trim();
       const submitBtn = this.querySelector('.submit-post-btn');
 
@@ -364,7 +371,7 @@
           finalCloudAssetUrl = parsedResponseData.secure_url;
         }
 
-        const { error } = await supabase.from('posts').insert([
+        const { error } = await supabaseClient.from('posts').insert([
           {
             name: currentUser.name,
             email: currentUser.email,
@@ -391,11 +398,12 @@
 
     // 8. Render Profile Personal Timeline Feed Filtering
     async function renderProfileTimeline() {
+      if (!supabaseClient) return;
       const feedElement = document.getElementById('profileTimelineFeed');
       feedElement.innerHTML = '<p style="color:#64748b; text-align:center;">Filtering your personal updates timeline...</p>';
 
       try {
-        const { data: posts, error } = await supabase
+        const { data: posts, error } = await supabaseClient
           .from('posts')
           .select('*')
           .eq('email', currentUser.email)
@@ -437,14 +445,14 @@
       }
     }
 
-    // Initialize application workflow hook on load
+    // Initialize application execution loops safely
     document.addEventListener('DOMContentLoaded', () => {
       initUserProfile();
     });
 
-    // Log user out securely from Supabase
     async function logout() {
-      await supabase.auth.signOut();
+      if (!supabaseClient) return;
+      await supabaseClient.auth.signOut();
       localStorage.clear();
       window.location.href = 'index.html';
     }
