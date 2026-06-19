@@ -209,14 +209,14 @@ document.getElementById('saveCropBtn').addEventListener('click', async function(
       type: 'blob',
       size: 'viewport',
       format: 'jpeg',
-      circle: false // Keeps payload as standard raster background, viewport layer clips it to circle visually
+      circle: false // Force standard raster layer construction (fixes the FormData parameter 2 error)
     });
 
     // 1. Build Payload and push to Cloudinary
     const uploadPayload = new FormData();
     uploadPayload.append('file', croppedBlob, 'avatar.jpg');
     uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
-
+    
     const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
       method: 'POST',
       body: uploadPayload
