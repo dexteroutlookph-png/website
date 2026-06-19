@@ -423,8 +423,7 @@
           const container = document.getElementById('croppieViewportContainer');
           container.innerHTML = ''; // Clear out old markup completely
 
-          // 2. FIX: Wait 100ms to allow the browser layout engine to paint the modal.
-          // This gives Croppie real dimensions so it doesn't render a black box!
+          // 2. Wait 100ms to allow the browser layout engine to paint the modal.
           setTimeout(() => {
             activeCroppieInstance = new Croppie(container, {
               viewport: { width: 220, height: 220, type: 'square' },
@@ -432,7 +431,6 @@
               enableOrientation: true,
               enableZoom: true
             });
-
             // Feed your image file directly into the layout viewport
             activeCroppieInstance.bind({
               url: e.target.result
@@ -446,18 +444,22 @@
       // Handle Cancel Trigger
       document.getElementById('cancelCropBtn').onclick = function() {
         document.getElementById('cropperOverlayModal').style.display = 'none';
-        if (activeCroppieInstance) activeCroppieInstance.destroy();
+        if (activeCroppieInstance) {
+          activeCroppieInstance.destroy();
+          activeCroppieInstance = null;
+        }
         activeFileSelector.value = ''; 
       };
 
-     // Handle Apply Crop & Save Pipeline
+      // Handle Apply Crop & Save Pipeline
       document.getElementById('saveCropBtn').onclick = async function() {
         if (!activeCroppieInstance) return;
+        
         activeUploadBtn.textContent = "Processing...";
         activeUploadBtn.disabled = true;
 
         try {
-          // FIX: Extract the data out BEFORE hiding the modal element layout frame
+          // FIX 1: Extract the image canvas data BEFORE hiding the modal element!
           const croppedBase64 = await activeCroppieInstance.result({
             type: 'base64',
             size: { width: 400, height: 400 },
@@ -465,9 +467,10 @@
             quality: 0.9
           });
 
-          // Now it is perfectly safe to hide and tear down the modal frame
+          // Now safely close and dismantle the cropper modal
           document.getElementById('cropperOverlayModal').style.display = 'none';
           activeCroppieInstance.destroy();
+          activeCroppieInstance = null;
 
           // Push to Cloudinary
           const remoteStorageUrl = await uploadBase64ToCloudinary(croppedBase64);
@@ -485,8 +488,10 @@
             document.getElementById('composerAvatar').src = remoteStorageUrl;
             document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
             
-            // Re-sync feeds to dynamically reflect changes across all posts instantly
-            loadFeedStream();
+            // Re-sync feeds safely checking if functions exist
+            if (typeof loadFeedStream === 'function') loadFeedStream();
+            if (typeof renderProfileTimeline === 'function') renderProfileTimeline();
+            
             activeUploadBtn.textContent = "Change Photo";
           } else {
             activeUploadBtn.textContent = "Upload Failed";
@@ -494,13 +499,17 @@
         } catch (err) {
           console.error("Avatar operation pipeline fault:", err);
           document.getElementById('cropperOverlayModal').style.display = 'none';
-          if (activeCroppieInstance) activeCroppieInstance.destroy();
+          if (activeCroppieInstance) {
+            try { activeCroppieInstance.destroy(); } catch(e){}
+            activeCroppieInstance = null;
+          }
           activeUploadBtn.textContent = "Upload Failed";
         } finally {
           activeUploadBtn.disabled = false;
           activeFileSelector.value = ''; 
         }
       };
+    }
 
     function destroyCroppieModal() {
       if (croppieInstance) {
@@ -714,6 +723,8 @@
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
       const targetUserId = selectedTargetProfileUser ? selectedTargetProfileUser.id : currentUser.id;
+      
+      // FIX: Determine the live, up-to-date avatar URL for the profile being viewed
       const liveAvatarUrl = (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || baseDefaultSvg;
       
       try {
@@ -750,7 +761,7 @@
           card.className = 'thread-card';
           card.id = `profile-post-card-${post.id}`;
           
-          // FIX: prioritize liveAvatarUrl before looking at post.avatar_url
+          // FIX: Use liveAvatarUrl here so old posts reflect the newly cropped photo instantly
           card.innerHTML = `
             <div class="thread-header">
               <img class="thread-avatar" src="${liveAvatarUrl}">
@@ -775,7 +786,6 @@
         });
       } catch(e) { console.error(e); }
     }
-
     // Complete Deletion Pipeline (Database Row Drop + Storage Bucket File Wipe)
     async function executePostDeletion(postId, imageUrl) {
       if (!postId || !supabaseClient) return;
