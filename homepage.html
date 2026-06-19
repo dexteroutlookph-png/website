@@ -89,8 +89,8 @@
         <div class="profile-hero">
           <img class="large-avatar" id="profAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Avatar">
           <div style="margin-top: 10px;">
-          <input type="file" id="avatarFileSelector" accept="image/*" style="display: none;" />
-          <button type="button" id="changeAvatarBtn" style="background: #243249; color: #fff; border: 1px solid #3b4f6e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Change Photo</button>
+            <input type="file" id="avatarFileSelector" accept="image/*" style="display: none;" />
+            <button type="button" id="changeAvatarBtn" style="background: #243249; color: #fff; border: 1px solid #3b4f6e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Change Photo</button>
           </div>
           <h2 id="profName">Loading Profile...</h2>
           <div class="profile-meta" id="profEmail">loading@email.com</div>
@@ -138,152 +138,20 @@
       <button class="nav-item" onclick="switchView('profileView', 'Profile', this)">Profile</button>
     </nav>
   </div>
-<div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-  <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center;">
-    <h3 style="color:#fff; margin-top:0;">Crop Profile Photo</h3>
-    <div id="cropperViewport" style="width:100%; height:250px; margin-bottom:20px;"></div>
-    <div style="display:flex; gap:10px; justify-content:center;">
-      <button type="button" id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>
-      <button type="button" id="saveCropBtn" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Crop & Upload</button>
+
+  <div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center;">
+      <h3 style="color:#fff; margin-top:0;">Crop Profile Photo</h3>
+      <div id="cropperViewport" style="width:100%; height:250px; margin-bottom:20px;"></div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button type="button" id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>
+        <button type="button" id="saveCropBtn" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Crop & Upload</button>
+      </div>
     </div>
   </div>
-</div>
-<script>
 
-  let activeCropperInstance = null;
-
-// Open file picker on click
-document.getElementById('changeAvatarBtn').addEventListener('click', () => {
-  document.getElementById('avatarFileSelector').click();
-});
-
-// Intercept selected image file and send to the Cropper Modal
-document.getElementById('avatarFileSelector').addEventListener('change', function(e) {
-  if (!e.target.files || !e.target.files[0]) return;
-  
-  const targetFile = e.target.files[0];
-  const fileReader = new FileReader();
-  
-  fileReader.onload = function(event) {
-    // Show the modal
-    const modal = document.getElementById('cropperModal');
-    modal.style.display = 'flex';
-    
-    // Destroy previous cropper instances if they exist
-    if (activeCropperInstance) activeCropperInstance.destroy();
-    
-    // Initialize circular cropper structure
-    activeCropperInstance = new Croppie(document.getElementById('cropperViewport'), {
-      viewport: { width: 150, height: 150, type: 'circle' },
-      boundary: { width: 250, height: 250 },
-      showZoomer: true
-    });
-    
-    // Bind your image to the tool window
-    activeCropperInstance.bind({ url: event.target.result });
-  };
-  
-  fileReader.readAsDataURL(targetFile);
-});
-
-// Dismiss cropping window cleanly
-document.getElementById('cancelCropBtn').addEventListener('click', () => {
-  document.getElementById('cropperModal').style.display = 'none';
-  document.getElementById('avatarFileSelector').value = '';
-});
-
-
-
-    // Now that the blob is safely compiled, we can dim the modal UI safely
-    cropModal.style.display = 'none';
-
-    try {
-
-// Process crop data and push up to the clouds
-document.getElementById('saveCropBtn').addEventListener('click', function() {
-  if (!activeCropperInstance) return;
-  
-  const changeBtn = document.getElementById('changeAvatarBtn');
-  const cropModal = document.getElementById('cropperModal');
-  
-  changeBtn.disabled = true;
-  changeBtn.textContent = "Processing...";
-
-  activeCropperInstance.result({
-    type: 'blob',
-    size: 'viewport',
-    format: 'jpeg'
-  }).then(async function(croppedBlob) {
-    if (!croppedBlob) {
-      throw new Error("Cropper background engine failed to generate an output file.");
-    }
-
-    cropModal.style.display = 'none';
-
-    try {
-      // 1. Send file to Cloudinary
-      const uploadPayload = new FormData();
-      uploadPayload.append('file', croppedBlob, 'avatar.jpg');
-      uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
-
-      const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
-        method: 'POST',
-        body: uploadPayload
-      });
-
-      if (!serverResponse.ok) {
-        const errDetails = await serverResponse.json().catch(() => ({}));
-        throw new Error(errDetails.error?.message || 'Cloudinary upload failed.');
-      }
-      
-      const parsedResponseData = await serverResponse.json();
-      const cleanSecureUrl = parsedResponseData.secure_url;
-
-      // 2. Sync to Supabase Profiles Table Layout
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      
-      // We target 'avatar_url'. If your column is named 'photo' or 'avatar', change it below:
-      const { data, error: dbError } = await supabaseClient
-        .from('profiles')
-        .update({ avatar_url: cleanSecureUrl }) 
-        .eq('id', user.id)
-        .select(); // Forces Supabase to return the updated data row
-
-      if (dbError) throw dbError;
-
-      // Check if Supabase silently ignored the update due to RLS
-      if (!data || data.length === 0) {
-        throw new Error("RLS Policy Blocked: The database accepted the request but refused to save it. Make sure your UPDATE policy is active for authenticated users.");
-      }
-
-      // 3. Update active states live
-      currentUser.photo = cleanSecureUrl;
-      document.getElementById('profAvatar').src = cleanSecureUrl;
-      if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
-      if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
-
-      alert("Profile photo updated permanently!");
-      
-      // Reload feed streams to show off the new avatar immediately
-      if (typeof loadFeedStream === 'function') loadFeedStream();
-      if (typeof renderProfileTimeline === 'function') renderProfileTimeline();
-
-    } catch (err) {
-      console.error("Database Save Error:", err);
-      alert("Error: " + err.message);
-    } finally {
-      changeBtn.disabled = false;
-      changeBtn.textContent = "Change Photo";
-      document.getElementById('avatarFileSelector').value = '';
-    }
-  }).catch(function(cropErr) {
-    alert("Failed to render the cropped photo region.");
-    cropModal.style.display = 'none';
-    changeBtn.disabled = false;
-    changeBtn.textContent = "Change Photo";
-  });
-});
-    // 1. Navigation Controller (Moved to absolute top so tabs work instantly no matter what)
+  <script>
+    // 1. Navigation Controller 
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -303,7 +171,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
     }
 
     // 2. Cloud Configuration
-    // IMPORTANT: Make sure these match your actual Supabase Dashboard keys!
     const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
     const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
     
@@ -312,6 +179,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
     const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
     let supabaseClient = null;
+    let activeCropperInstance = null;
 
     try {
       if (typeof supabase !== 'undefined') {
@@ -321,7 +189,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       console.error("Supabase failed to initialize:", e);
     }
 
-    // Global placeholder data so the UI doesn't break if database fails
     let currentUser = {
       name: "Anonymous User", 
       email: "guest@isied.org", 
@@ -332,7 +199,119 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
     let selectedFileObject = null;
 
-    // 3. Authenticate User & Fetch Cloud Public Profile
+    // 3. Avatar Modification Interceptors (Croppie Flow)
+    document.getElementById('changeAvatarBtn').addEventListener('click', () => {
+      document.getElementById('avatarFileSelector').click();
+    });
+
+    document.getElementById('avatarFileSelector').addEventListener('change', function(e) {
+      if (!e.target.files || !e.target.files[0]) return;
+      
+      const targetFile = e.target.files[0];
+      const fileReader = new FileReader();
+      
+      fileReader.onload = function(event) {
+        const modal = document.getElementById('cropperModal');
+        modal.style.display = 'flex';
+        
+        if (activeCropperInstance) activeCropperInstance.destroy();
+        
+        activeCropperInstance = new Croppie(document.getElementById('cropperViewport'), {
+          viewport: { width: 150, height: 150, type: 'circle' },
+          boundary: { width: 250, height: 250 },
+          showZoomer: true
+        });
+        
+        activeCropperInstance.bind({ url: event.target.result });
+      };
+      
+      fileReader.readAsDataURL(targetFile);
+    });
+
+    document.getElementById('cancelCropBtn').addEventListener('click', () => {
+      document.getElementById('cropperModal').style.display = 'none';
+      document.getElementById('avatarFileSelector').value = '';
+    });
+
+    document.getElementById('saveCropBtn').addEventListener('click', function() {
+      if (!activeCropperInstance) return;
+      
+      const changeBtn = document.getElementById('changeAvatarBtn');
+      const cropModal = document.getElementById('cropperModal');
+      
+      changeBtn.disabled = true;
+      changeBtn.textContent = "Processing...";
+
+      activeCropperInstance.result({
+        type: 'blob',
+        size: 'viewport',
+        format: 'jpeg'
+      }).then(async function(croppedBlob) {
+        if (!croppedBlob) {
+          throw new Error("Cropper background engine failed to generate an output file.");
+        }
+
+        cropModal.style.display = 'none';
+
+        try {
+          const uploadPayload = new FormData();
+          uploadPayload.append('file', croppedBlob, 'avatar.jpg');
+          uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
+
+          const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
+            method: 'POST',
+            body: uploadPayload
+          });
+
+          if (!serverResponse.ok) {
+            const errDetails = await serverResponse.json().catch(() => ({}));
+            throw new Error(errDetails.error?.message || 'Cloudinary upload failed.');
+          }
+          
+          const parsedResponseData = await serverResponse.json();
+          const cleanSecureUrl = parsedResponseData.secure_url;
+
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          
+          const { data, error: dbError } = await supabaseClient
+            .from('profiles')
+            .update({ avatar_url: cleanSecureUrl }) 
+            .eq('id', user.id)
+            .select();
+
+          if (dbError) throw dbError;
+
+          if (!data || data.length === 0) {
+            throw new Error("RLS Policy Blocked: The database accepted the request but refused to save it. Make sure your UPDATE policy is active for authenticated users.");
+          }
+
+          currentUser.photo = cleanSecureUrl;
+          document.getElementById('profAvatar').src = cleanSecureUrl;
+          if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
+          if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
+
+          alert("Profile photo updated permanently!");
+          
+          loadFeedStream();
+          renderProfileTimeline();
+
+        } catch (err) {
+          console.error("Database Save Error:", err);
+          alert("Error: " + err.message);
+        } finally {
+          changeBtn.disabled = false;
+          changeBtn.textContent = "Change Photo";
+          document.getElementById('avatarFileSelector').value = '';
+        }
+      }).catch(function(cropErr) {
+        alert("Failed to render the cropped photo region.");
+        cropModal.style.display = 'none';
+        changeBtn.disabled = false;
+        changeBtn.textContent = "Change Photo";
+      });
+    });
+
+    // 4. Authenticate User & Fetch Cloud Public Profile
     async function initUserProfile() {
       if (!supabaseClient) {
         document.getElementById('profName').textContent = currentUser.name;
@@ -348,7 +327,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
           return;
         }
 
-        // Selecting only columns that exist explicitly in your table layout
         const { data: profile, error: dbError } = await supabaseClient
           .from('profiles')
           .select('full_name, cluster, local_church, avatar_url') 
@@ -359,7 +337,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
         if (profile) {
           currentUser.name = profile.full_name || currentUser.name;
-          currentUser.email = user.email || currentUser.email; // Safely pulled directly from Supabase Auth
+          currentUser.email = user.email || currentUser.email; 
           currentUser.cluster = profile.cluster || currentUser.cluster;
           currentUser.church = profile.local_church || currentUser.church;
           currentUser.photo = profile.avatar_url || currentUser.photo;
@@ -383,7 +361,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       }
     }
 
-    // 4. Load Public Global Newsfeed Feed From Supabase (Auto-Syncing Profile Photos)
+    // 5. Load Public Global Newsfeed Feed From Supabase
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -391,13 +369,9 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
         return;
       }
       try {
-        // SQL Join: Fetch posts AND grab the current avatar_url directly from the profiles relationship
         const { data: posts, error } = await supabaseClient
           .from('posts')
-          .select(`
-            id, name, email, content, image_url, createdat,
-            profiles ( avatar_url )
-          `)
+          .select('*')
           .order('createdat', { ascending: false });
 
         if (error) throw error;
@@ -410,9 +384,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
-          
-          // Use the newest profile table photo, fallback to post value, fallback to default placeholder
-          let avatarSrc = post.profiles?.avatar_url || post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          let avatarSrc = post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
           
           let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
           let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
@@ -438,7 +410,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       }
     }
 
-    // 5. Submit New Thread Post (Home tab)
+    // 6. Submit New Thread Post (Home tab)
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!supabaseClient) return;
@@ -451,12 +423,11 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       btn.disabled = true;
 
       try {
-        // ADD THIS LINE TO GRAB THE USER ID
         const { data: { user } } = await supabaseClient.auth.getUser();
 
         const { error } = await supabaseClient.from('posts').insert([
           { 
-            user_id: user.id, // ADD THIS LINE TOO
+            user_id: user.id,
             name: currentUser.name, 
             email: currentUser.email, 
             content: text.value,
@@ -480,7 +451,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       }
     });
 
-    // 6. Handle Image Attachment Preview Configurations
+    // 7. Handle Image Attachment Preview Configurations
     const profilePhotoInput = document.getElementById('profilePhotoInput');
     const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
     const profileImagePreview = document.getElementById('profileImagePreview');
@@ -507,14 +478,13 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       }
     });
 
-   // 7. Profile Interactive Form Submission + Cloudinary Engine
+    // 8. Profile Interactive Form Submission + Cloudinary Engine
     document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!supabaseClient) return;
       const textVal = profilePostContent.value.trim();
       const submitBtn = this.querySelector('.submit-post-btn');
 
-      // Double-check we actually have data to send
       if (!textVal && !selectedFileObject) return;
 
       try {
@@ -523,7 +493,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
         let finalCloudAssetUrl = null;
 
-        // Strict validation: Only upload to Cloudinary if an actual file payload exists
         if (selectedFileObject instanceof File && selectedFileObject.size > 0) {
           const uploadPayload = new FormData();
           uploadPayload.append('file', selectedFileObject);
@@ -536,20 +505,18 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
           if (!serverResponse.ok) {
             const errorDetails = await serverResponse.json().catch(() => ({}));
-            console.error("Cloudinary Detailed Reject:", errorDetails);
-            throw new Error(errorDetails.error?.message || 'Cloudinary Asset upload failed. Double check that your upload preset is set to UNSIGNED.');
+            throw new Error(errorDetails.error?.message || 'Cloudinary Asset upload failed.');
           }
 
           const parsedResponseData = await serverResponse.json();
           finalCloudAssetUrl = parsedResponseData.secure_url;
         }
 
-        // ADD THIS LINE TO GRAB THE USER ID HERE TOO
         const { data: { user } } = await supabaseClient.auth.getUser();
 
         const { error } = await supabaseClient.from('posts').insert([
           {
-            user_id: user.id, // ADD THIS LINE TOO
+            user_id: user.id,
             name: currentUser.name,
             email: currentUser.email,
             content: textVal,
@@ -561,7 +528,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
         if (error) throw error;
 
-        // Reset composer UI states cleanly
         profilePostContent.value = '';
         profilePostContent.style.height = 'auto';
         document.getElementById('profileRemoveImageBtn').click();
@@ -573,7 +539,8 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
         submitBtn.textContent = 'Post';
       }
     });
-    // 8. Render Profile Personal Timeline Feed Filtering
+
+    // 9. Render Profile Personal Timeline Feed Filtering
     async function renderProfileTimeline() {
       const feedElement = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) {
