@@ -783,11 +783,21 @@
     }
 
     async function logout() {
-      if(supabaseClient) {
-        await supabaseClient.auth.signOut();
-        location.reload();
-      }
+  if (supabaseClient) {
+    try {
+      // Force wait for the remote session state and local storage tokens to clear cleanly
+      await supabaseClient.auth.signOut();
+    } catch (err) {
+      console.error("Session clear error:", err);
     }
+    
+    // Clear out our memory user states
+    currentUser = { id: "", name: "Anonymous User", email: "guest@isied.org", cluster: "Unassigned Cluster", church: "District General", photo: "" };
+    
+    // Redirect cleanly to your login landing page
+    window.location.href = "index.html";
+  }
+}
 
     document.addEventListener('DOMContentLoaded', initUserProfile);
   </script>
