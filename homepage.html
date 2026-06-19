@@ -156,15 +156,27 @@
     const CLOUDINARY_PRESET_NAME = "bac62341-2a40-46f5-913e-c36589a608f6";
     const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-    // 3. Protected Session Parsing Engine
+    // 3. Multi-Key Fallback Data Puller
     let currentUser = {
-      name: "Anonymous User", email: "guest@isied.org", cluster: "Unassigned Cluster", church: "District General", photo: ""
+      name: "Anonymous User", 
+      email: "guest@isied.org", 
+      cluster: "Unassigned Cluster", 
+      church: "District General", 
+      photo: ""
     };
 
     try {
-      const sessionData = localStorage.getItem('registrationStep1');
-      if (sessionData) {
-        currentUser = JSON.parse(sessionData);
+      const regData = localStorage.getItem('registrationStep1');
+      const alternateData = localStorage.getItem('user') || localStorage.getItem('profile');
+      const rawData = regData || alternateData;
+
+      if (rawData) {
+        const parsed = JSON.parse(rawData);
+        currentUser.name = parsed.name || parsed.fullName || parsed.username || currentUser.name;
+        currentUser.email = parsed.email || parsed.user_email || currentUser.email;
+        currentUser.cluster = parsed.cluster || parsed.selectedCluster || currentUser.cluster;
+        currentUser.church = parsed.church || parsed.localChurch || parsed.selectedChurch || currentUser.church;
+        currentUser.photo = parsed.photo || parsed.avatar || parsed.avatarUrl || currentUser.photo;
       }
     } catch (e) {
       console.error("Local user parsing exception managed cleanly:", e);
@@ -172,7 +184,7 @@
 
     let selectedFileObject = null;
 
-    // 4. Hydrate UI elements safely
+    // 4. Hydrate UI elements safely with real account details
     document.getElementById('profName').textContent = currentUser.name;
     document.getElementById('profEmail').textContent = currentUser.email;
     document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
