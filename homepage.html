@@ -450,16 +450,14 @@
         activeFileSelector.value = ''; 
       };
 
-      // Handle Apply Crop & Save Pipeline
+     // Handle Apply Crop & Save Pipeline
       document.getElementById('saveCropBtn').onclick = async function() {
         if (!activeCroppieInstance) return;
-
         activeUploadBtn.textContent = "Processing...";
         activeUploadBtn.disabled = true;
-        document.getElementById('cropperOverlayModal').style.display = 'none';
 
         try {
-          // Extract the cropped image canvas area out as a high-quality JPEG base64 string
+          // FIX: Extract the data out BEFORE hiding the modal element layout frame
           const croppedBase64 = await activeCroppieInstance.result({
             type: 'base64',
             size: { width: 400, height: 400 },
@@ -467,18 +465,18 @@
             quality: 0.9
           });
 
+          // Now it is perfectly safe to hide and tear down the modal frame
+          document.getElementById('cropperOverlayModal').style.display = 'none';
           activeCroppieInstance.destroy();
 
           // Push to Cloudinary
           const remoteStorageUrl = await uploadBase64ToCloudinary(croppedBase64);
-          
           if (remoteStorageUrl) {
             // Write back to Supabase Profiles database record
             const { error: dbUpdateError } = await supabaseClient
               .from('profiles')
               .update({ avatar_url: remoteStorageUrl })
               .eq('id', currentUser.id);
-            
             if (dbUpdateError) throw dbUpdateError;
 
             // Immediately rewrite global state nodes and live app preview elements
@@ -487,22 +485,22 @@
             document.getElementById('composerAvatar').src = remoteStorageUrl;
             document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
             
-            // Re-sync feeds to dynamically reflect changes across all posts instantly without a hard refresh
+            // Re-sync feeds to dynamically reflect changes across all posts instantly
             loadFeedStream();
-            
             activeUploadBtn.textContent = "Change Photo";
           } else {
             activeUploadBtn.textContent = "Upload Failed";
           }
         } catch (err) {
           console.error("Avatar operation pipeline fault:", err);
+          document.getElementById('cropperOverlayModal').style.display = 'none';
+          if (activeCroppieInstance) activeCroppieInstance.destroy();
           activeUploadBtn.textContent = "Upload Failed";
         } finally {
           activeUploadBtn.disabled = false;
           activeFileSelector.value = ''; 
         }
       };
-    }
 
     function destroyCroppieModal() {
       if (croppieInstance) {
@@ -716,14 +714,14 @@
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
       const targetUserId = selectedTargetProfileUser ? selectedTargetProfileUser.id : currentUser.id;
-
+      const liveAvatarUrl = (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || baseDefaultSvg;
+      
       try {
         const { data: posts } = await supabaseClient
           .from('posts')
           .select('*')
           .eq('user_id', targetUserId)
           .order('createdat', { ascending: false });
-
         feed.innerHTML = '';
         if(!posts || posts.length === 0) {
           feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No updates shared here yet.</p>';
@@ -751,9 +749,11 @@
           const card = document.createElement('div');
           card.className = 'thread-card';
           card.id = `profile-post-card-${post.id}`;
+          
+          // FIX: prioritize liveAvatarUrl before looking at post.avatar_url
           card.innerHTML = `
             <div class="thread-header">
-              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || baseDefaultSvg}">
+              <img class="thread-avatar" src="${liveAvatarUrl}">
               <div>
                 <div class="thread-user">@${post.name || 'Anonymous'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${post.createdat ? new Date(post.createdat).toLocaleString() : ''}</div>
@@ -763,7 +763,6 @@
             ${imageMarkup}
             ${deleteButtonMarkup}
           `;
-
           if (String(post.user_id) === String(currentUser.id)) {
             card.querySelector('.delete-post-btn').addEventListener('click', function(e) {
               e.preventDefault();
