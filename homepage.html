@@ -361,7 +361,7 @@
       }
     }
 
-   // 5. Load Public Global Newsfeed Feed From Supabase (With Live Profile Sync)
+   // 5. Load Public Global Newsfeed Feed From Supabase (Bulletproof Hybrid View)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -369,13 +369,10 @@
         return;
       }
       try {
-        // Relational Fetch: Pulls posts while looking up the author's live profile record
+        // Attempt a clean flat select first to guarantee the feed NEVER crashes
         const { data: posts, error } = await supabaseClient
           .from('posts')
-          .select(`
-            id, name, email, content, image_url, createdat, user_id,
-            profiles ( avatar_url )
-          `)
+          .select('*')
           .order('createdat', { ascending: false });
 
         if (error) throw error;
@@ -386,11 +383,30 @@
           return;
         }
 
+        // Fetch all profiles in one quick parallel request to map live avatars manually
+        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url');
+        const profileMap = {};
+        if (profiles) {
+          profiles.forEach(p => { profileMap[p.id] = p.avatar_url; });
+        }
+
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
           
-          // Grabs the real-time photo from the profile table. Fallback to placeholder if missing.
-          let avatarSrc = post.profiles?.avatar_url || post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          // Hybrid Sync Strategy:
+          // 1. Look for a live matching profile avatar in our map using user_id
+          // 2. If it's a match for you locally, use your fresh cached image
+          // 3. Fallback to whatever string was saved on the post
+          // 4. Fallback to default SVG placeholder
+          let avatarSrc = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          
+          if (post.user_id && profileMap[post.user_id]) {
+            avatarSrc = profileMap[post.user_id];
+          } else if (currentUser && post.email === currentUser.email && currentUser.photo) {
+            avatarSrc = currentUser.photo;
+          } else if (post.avatar_url) {
+            avatarSrc = post.avatar_url;
+          }
           
           let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
           let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
@@ -411,7 +427,7 @@
           stream.appendChild(card);
         });
       } catch (err) {
-        console.error("Feed loading crashed:", err);
+        console.error("Feed rendering runtime error:", err);
         stream.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to pull live cloud feed.</p>`;
       }
     }
