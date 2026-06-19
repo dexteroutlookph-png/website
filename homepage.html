@@ -422,50 +422,54 @@
       });
     });
 
-    // 4. Authenticate User & Fetch Cloud Public Profile
+   // 4. Authenticate User & Fetch Cloud Public Profile
     async function initUserProfile() {
       if (!supabaseClient) {
-        document.getElementById('profName').textContent = currentUser.name;
-        document.getElementById('profEmail').textContent = currentUser.email;
-        document.getElementById('profDetails').textContent = `${currentUser.cluster} • ${currentUser.church}`;
+        applyProfileViewUIChange(true);
         return;
       }
       try {
+        // Fetch current authenticated session
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
         
         if (authError || !user) {
-          console.warn("No active session found.");
+          console.warn("No active session found. Please sign in.");
+          applyProfileViewUIChange(true);
           return;
         }
 
+        // Try getting custom profile row
         const { data: profile, error: dbError } = await supabaseClient
           .from('profiles')
           .select('id, full_name, cluster, local_church, avatar_url, email') 
           .eq('id', user.id)
-          .single();
+          .maybeSingle(); // Prevents throwing hard errors if row doesn't exist yet
 
-        if (dbError) throw dbError;
+        // Set baseline parameters from auth metadata
+        currentUser.id = user.id;
+        currentUser.email = user.email || currentUser.email;
+        currentUser.name = user.user_metadata?.full_name || "User Account";
 
+        // Overlay custom profile settings if present
         if (profile) {
-          currentUser.id = profile.id;
           currentUser.name = profile.full_name || currentUser.name;
-          currentUser.email = profile.email || user.email || currentUser.email; 
+          currentUser.email = profile.email || currentUser.email; 
           currentUser.cluster = profile.cluster || currentUser.cluster;
           currentUser.church = profile.local_church || currentUser.church;
           currentUser.photo = profile.avatar_url || currentUser.photo;
         }
 
         const baseSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
-        document.getElementById('composerAvatar').src = currentUser.photo || baseSvg;
-        document.getElementById('profileComposerAvatar').src = currentUser.photo || baseSvg;
+        if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = currentUser.photo || baseSvg;
+        if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = currentUser.photo || baseSvg;
 
-        resetToOwnProfile();
+        applyProfileViewUIChange(true);
         checkUnreadNotificationsCount();
         setInterval(checkUnreadNotificationsCount, 15000);
 
       } catch (err) {
         console.error("Profile load error:", err.message);
-        document.getElementById('profName').textContent = currentUser.name;
+        applyProfileViewUIChange(true);
       } finally {
         loadFeedStream();
       }
@@ -936,10 +940,19 @@
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
-      const targetEmail = selectedTargetProfileUser ? selectedTargetProfileUser.email : currentUser.email;
+      
+      // Look up posts using user database IDs instead of easily-mutated email strings
+      const targetUserId = selectedTargetProfileUser ? selectedTargetProfileUser.id : currentUser.id;
 
       try {
-        const { data: posts } = await supabaseClient.from('posts').select('*').eq('email', targetEmail).order('createdat', { ascending: false });
+        const { data: posts, error } = await supabaseClient
+          .from('posts')
+          .select('*')
+          .eq('user_id', targetUserId)
+          .order('createdat', { ascending: false });
+
+        if (error) throw error;
+
         feed.innerHTML = '';
         if(!posts || posts.length === 0) {
           feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No timeline updates shared.</p>';
@@ -968,7 +981,7 @@
           card.className = 'thread-card';
           card.innerHTML = `
             <div class="thread-header">
-              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo)}">
+              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4='}">
               <div>
                 <div class="thread-user">@${post.name || 'Anonymous'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${post.createdat ? new Date(post.createdat).toLocaleString() : ''}</div>
@@ -980,7 +993,10 @@
           `;
           feed.appendChild(card);
         });
-      } catch(e) { console.error(e); }
+      } catch(e) { 
+        console.error("Timeline error:", e);
+        feed.innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Failed to load timeline.</p>';
+      }
     }
 
     async function logout() {
