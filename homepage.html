@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
   <style>
-    body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; font-family: system-ui, -apple-system, sans-serif; }
+    body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; font-family: system-ui, -apple-system, sans-serif; color: #fff; }
     .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; }
     .app-header { position: sticky; top: 0; background: rgba(7, 20, 38, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 100; padding: 16px; text-align: center; border-bottom: 1px solid #1e293b; }
     .app-header h2 { margin: 0; font-size: 1.3rem; color: #fff; font-weight: 700; }
@@ -38,28 +38,18 @@
     .action-trigger:hover { background: rgba(255,255,255,0.05); color: #fff; }
     .action-trigger.liked { color: #f43f5e; font-weight: bold; }
     .quote-reference-box { background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; margin: 10px 0 0 50px; font-size: 0.9rem; }
-    .notif-card { display: flex; gap: 12px; padding: 14px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-bottom: 10px; align-items: flex-start; }
-    .notif-card.unread { border-left: 3px solid #6366f1; background: rgba(99, 102, 241, 0.03); }
-    .notif-icon { font-size: 1.2rem; }
-    .notif-body { flex: 1; font-size: 0.88rem; color: #e2e8f0; }
-    .notif-time { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
-
+    
     .inline-composer { background: #11192e; border: 1px solid #243249; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
     .composer-layout { display: flex; gap: 12px; }
     .composer-fields { flex-grow: 1; }
     .inline-composer textarea { width: 100%; background: transparent; border: none; color: #fff; font-size: 1rem; resize: none; min-height: 50px; padding: 4px 0; font-family: inherit; }
     .inline-composer textarea:focus { outline: none; }
     .composer-actions { display: flex; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #1e293b; padding-top: 10px; }
-    .composer-actions button { padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor: pointer; }
-    .event-item { padding: 16px; border-bottom: 1px solid #334155; display: flex; gap: 16px; align-items: flex-start; }
-    .event-item:last-child { border-bottom: none; }
-    .event-date-badge { background: #4f46e5; color: #fff; padding: 8px; border-radius: 10px; text-align: center; min-width: 55px; font-weight: bold; }
-    .event-date-badge .day { font-size: 1.2rem; display: block; }
-    .event-date-badge .month { font-size: 0.75rem; text-transform: uppercase; }
-    .event-details h4 { margin: 0 0 4px 0; color: #fff; font-size: 1.1rem; }
-    .event-meta { font-size: 0.85rem; color: #94a3b8; }
+    .primary-button { background: #6366f1; color: white; border: none; padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor: pointer; }
+    .primary-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .profile-hero { text-align: center; padding: 24px 0 12px; }
-    .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; }
+    .profile-hero .large-avatar { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; display: block; border: 2.5px solid #6366f1; background: #4338ca; }
     .profile-hero h2 { margin: 0 0 6px 0; color: #fff; font-size: 1.4rem; }
     .profile-meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 4px; }
     
@@ -81,7 +71,7 @@
           <div class="composer-layout">
             <img class="thread-avatar" id="composerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="User">
             <div class="composer-fields">
-              <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread... Type @name to mention!" required></textarea>
+              <textarea id="inlineThreadContent" placeholder="Share a church update or start a thread..." required></textarea>
             </div>
           </div>
           <div class="composer-actions">
@@ -90,28 +80,20 @@
         </form>
         <div id="inlinePostStatus" style="margin-top: 8px; font-size: 0.85rem; padding-left: 50px;"></div>
       </div>
-
       <div id="newsfeedStream"><p style="color: #94a3b8; text-align: center;">Syncing feed...</p></div>
     </main>
 
     <section id="eventsView" class="app-view">
       <div class="ui-panel-card">
         <h3>District Events</h3>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:20px;">Upcoming youth gathers across ISIED.</p>
-        <div class="event-item">
-          <div class="event-date-badge"><span class="day">28</span><span class="month">Jun</span></div>
-          <div class="event-details">
-            <h4>District Youth Fellowship Summit</h4>
-            <div class="event-meta">⏰ 9:00 AM • 📍 District Central Church Hall</div>
-          </div>
-        </div>
+        <p style="color:#94a3b8; font-size:0.9rem;">Upcoming youth gathers across ISIED.</p>
       </div>
     </section>
 
     <section id="peopleView" class="app-view">
       <div class="ui-panel-card">
         <h3>Community Directory</h3>
-        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:16px;">Connect with other youth members in the Sphere.</p>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:16px;">Connect with all registered users in the Sphere.</p>
         <div id="peopleDirectoryList">
           <p style="color: #94a3b8; text-align: center;">Loading community dashboard...</p>
         </div>
@@ -120,10 +102,7 @@
 
     <section id="notificationsView" class="app-view">
       <div class="ui-panel-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="margin:0;">Activity Pipeline</h3>
-          <button onclick="clearNotificationBadge()" style="background:transparent; border:none; color:#6366f1; font-size:0.8rem; cursor:pointer; font-weight: bold;">Mark all read</button>
-        </div>
+        <h3>Activity Pipeline</h3>
         <div id="notificationsWrapperFeed">
           <p style="color:#94a3b8; text-align:center;">Syncing notifications...</p>
         </div>
@@ -148,7 +127,7 @@
           <div class="profile-meta" id="profDetails" style="color:#6366f1; font-weight:600; margin-top:6px;">Cluster Details</div>
         </div>
         <div style="border-top:1px solid #334155; padding-top:16px; text-align:center;" id="profileSignOutRow">
-          <button onclick="logout()" class="primary-button" style="background:#ef4444; width:auto; padding:8px 20px; border-radius:20px; font-size:0.85rem; font-weight:700; border:none; color:white; cursor:pointer;">Sign Out</button>
+          <button onclick="logout()" class="primary-button" style="background:#ef4444;">Sign Out</button>
         </div>
       </div>
 
@@ -156,28 +135,15 @@
         <form id="profilePostForm">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <img class="thread-avatar" id="profileComposerAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=" alt="Mini Avatar" style="width:36px; height:36px;" />
-            <textarea id="profilePostContent" placeholder="Share a thought... Mention someone with @name" style="flex: 1; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 0.95rem; min-height: 40px; resize: none; outline: none; font-family: inherit;" required></textarea>
+            <textarea id="profilePostContent" placeholder="Share a thought..." style="flex: 1; background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 10px 14px; color: #fff; min-height: 40px; resize: none; outline: none; font-family: inherit;" required></textarea>
           </div>
-
-          <div id="profileImagePreviewContainer" style="display: none; margin-top: 12px; position: relative; border-radius: 12px; overflow: hidden; max-height: 260px; background: #11192e; border: 1px solid #243249;">
-            <button type="button" id="profileRemoveImageBtn" style="position: absolute; top: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index:10;">&times;</button>
-            <img id="profileImagePreview" src="" alt="Attached Preview" style="width: 100%; height: 100%; object-fit: contain; max-height:260px;" />
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #1e293b;">
-            <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" />
-            <label for="profilePhotoInput" style="display: flex; align-items: center; gap: 6px; color: #22c55e; font-size: 0.85rem; font-weight: 700; cursor: pointer; padding: 6px 12px; border-radius: 20px; background: rgba(34, 197, 94, 0.08); transition: background 0.2s;">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-              Photo
-            </label>
-            <button type="submit" class="primary-button submit-post-btn" style="padding: 6px 18px; font-size: 0.85rem; border-radius: 20px; font-weight: 700; cursor:pointer; background: #6366f1; color: white; border: none;">Post</button>
+          <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+            <button type="submit" class="primary-button submit-post-btn">Post</button>
           </div>
         </form>
       </div>
 
-      <h3 id="timelineHeadingText" style="font-size: 1rem; font-weight: 700; color: #94a3b8; margin: 24px 0 12px 4px; text-transform: uppercase; letter-spacing: 0.5px;">My Timeline</h3>
+      <h3 id="timelineHeadingText" style="font-size: 1rem; font-weight: 700; color: #94a3b8; margin: 24px 0 12px 4px; text-transform: uppercase;">My Timeline</h3>
       <div id="profileTimelineFeed">
         <p style="color: #94a3b8; text-align: center;">Loading timeline entries...</p>
       </div>
@@ -195,28 +161,38 @@
   <div id="quoteShareModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
     <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:480px;">
       <h3 style="margin-top:0; color:#fff;">Quote Share Thread</h3>
-      <textarea id="quoteModalCommentInput" placeholder="Add your perspective onto this quote..." style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; color:#fff; min-height:60px; resize:none; font-family:inherit; outline:none; margin-bottom:12px;"></textarea>
+      <textarea id="quoteModalCommentInput" placeholder="Add your perspective..." style="width:100%; box-sizing:border-box; background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; color:#fff; min-height:60px; resize:none; font-family:inherit; outline:none; margin-bottom:12px;"></textarea>
       <div id="quoteModalTargetPreview" style="background: #11192e; border: 1px solid #243249; border-radius: 12px; padding: 12px; font-size: 0.9rem;"></div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
         <button onclick="closeQuoteModal()" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer;">Cancel</button>
-        <button id="submitQuoteShareBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:bold;">Share Timeline</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center;">
-      <h3 style="color:#fff; margin-top:0;">Crop Profile Photo</h3>
-      <div id="cropperViewport" style="width:100%; height:250px; margin-bottom:20px;"></div>
-      <div style="display:flex; gap:10px; justify-content:center;">
-        <button type="button" id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>
-        <button type="button" id="saveCropBtn" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Crop & Upload</button>
+        <button id="submitQuoteShareBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:bold;">Share</button>
       </div>
     </div>
   </div>
 
   <script>
-    // 1. Navigation View Switcher Engine
+    // Configuration Keys
+    const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
+    const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
+
+    let supabaseClient = null;
+    let selectedTargetProfileUser = null; 
+    let activeShareTargetPostId = null;
+
+    try {
+      if (typeof supabase !== 'undefined') {
+        supabaseClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_KEY);
+      }
+    } catch(e) { console.error("Supabase fail:", e); }
+
+    let currentUser = {
+      id: "", name: "Anonymous User", email: "guest@isied.org", 
+      cluster: "Unassigned Cluster", church: "District General", photo: ""
+    };
+
+    const baseDefaultSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+
+    // View Switch Engine
     function switchView(viewId, title, element) {
       document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -232,225 +208,52 @@
         loadFeedStream();
       } else if (viewId === 'peopleView') {
         loadPeopleDirectory();
-      } else if (viewId === 'notificationsView') {
-        loadNotificationsPipeline();
-        clearNotificationBadge();
       } else if (viewId === 'profileView') {
         if (selectedTargetProfileUser) {
-         renderProfileTimeline();
+          applyProfileViewUIChange(false);
         } else {
-         applyProfileViewUIChange(true); // Force-binds your currentUser details to the UI fields
+          applyProfileViewUIChange(true);
         }
       }
     }
 
-    // 2. Cloud Configuration Keys
-    const SUPABASE_PROJECT_URL = "https://qymolbzmovnbiybpktqx.supabase.co"; 
-    const SUPABASE_PUBLIC_KEY = "sb_publishable_ZUrTD9os3hvy_tBC6cfLVQ_U7zpjWFf";
-    
-    const CLOUDINARY_CLOUD_NAME = "dwpj4pkrq"; 
-    const CLOUDINARY_PRESET_NAME = "youthsphere";
-    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-    let supabaseClient = null;
-    let activeCropperInstance = null;
-    let selectedTargetProfileUser = null; 
-    let activeShareTargetPostId = null;
-
-    try {
-      if (typeof supabase !== 'undefined') {
-        supabaseClient = supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_PUBLIC_KEY);
-      }
-    } catch(e) {
-      console.error("Supabase failed to initialize:", e);
-    }
-
-    let currentUser = {
-      id: "",
-      name: "Anonymous User", 
-      email: "guest@isied.org", 
-      cluster: "Unassigned Cluster", 
-      church: "District General", 
-      photo: ""
-    };
-
-    let selectedFileObject = null;
-
-    // Parse text interaction mentions (@Name)
+    // Format text mentions
     function formatPostContentText(text, usersDirectory = []) {
       if (!text) return "";
       let escapedHtml = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      
       return escapedHtml.replace(/@([a-zA-Z0-9_\s]{3,30})/g, (match, capturedName) => {
         const trimmed = capturedName.trim();
         const found = usersDirectory.find(u => u.full_name && u.full_name.toLowerCase() === trimmed.toLowerCase());
         if (found) {
-          return `<span class="mention-link" onclick="event.stopPropagation(); navigateToUserByEmail('${found.email}')">@${found.full_name}</span>`;
+          return `<span class="mention-link" onclick="event.stopPropagation(); navigateToUserById('${found.id}')">@${found.full_name}</span>`;
         }
         return match; 
       });
     }
 
-    // Scan for entries to deliver mention notifications
-    async function scanAndTriggerMentions(textContent, sourcePostId) {
-      if (!textContent || !supabaseClient) return;
-      const explicitMatches = [...textContent.matchAll(/@([a-zA-Z0-9_\s]{3,30})/g)];
-      
-      const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name');
-      if (!profiles) return;
-
-      for (let match of explicitMatches) {
-        const targetName = match[1].trim();
-        const detectedUser = profiles.find(p => p.full_name && p.full_name.toLowerCase() === targetName.toLowerCase());
-        
-        if (detectedUser && detectedUser.id !== currentUser.id) {
-          await supabaseClient.from('notifications').insert([{
-            receiver_id: detectedUser.id,
-            sender_id: currentUser.id,
-            type: 'mention',
-            post_id: sourcePostId
-          }]);
-        }
-      }
-    }
-
-    // 3. Avatar Modification Interceptors (Croppie Flow)
-    document.getElementById('changeAvatarBtn').addEventListener('click', () => {
-      document.getElementById('avatarFileSelector').click();
-    });
-
-    document.getElementById('avatarFileSelector').addEventListener('change', function(e) {
-      if (!e.target.files || !e.target.files[0]) return;
-      
-      const targetFile = e.target.files[0];
-      const fileReader = new FileReader();
-      
-      fileReader.onload = function(event) {
-        const modal = document.getElementById('cropperModal');
-        modal.style.display = 'flex';
-        
-        if (activeCropperInstance) activeCropperInstance.destroy();
-        
-        activeCropperInstance = new Croppie(document.getElementById('cropperViewport'), {
-          viewport: { width: 150, height: 150, type: 'circle' },
-          boundary: { width: 250, height: 250 },
-          showZoomer: true
-        });
-        
-        activeCropperInstance.bind({ url: event.target.result });
-      };
-      
-      fileReader.readAsDataURL(targetFile);
-    });
-
-    document.getElementById('cancelCropBtn').addEventListener('click', () => {
-      document.getElementById('cropperModal').style.display = 'none';
-      document.getElementById('avatarFileSelector').value = '';
-    });
-
-    document.getElementById('saveCropBtn').addEventListener('click', function() {
-      if (!activeCropperInstance) return;
-      
-      const changeBtn = document.getElementById('changeAvatarBtn');
-      const cropModal = document.getElementById('cropperModal');
-      
-      changeBtn.disabled = true;
-      changeBtn.textContent = "Processing...";
-
-      activeCropperInstance.result({
-        type: 'blob',
-        size: 'viewport',
-        format: 'jpeg'
-      }).then(async function(croppedBlob) {
-        if (!croppedBlob) {
-          throw new Error("Cropper background engine failed to generate an output file.");
-        }
-
-        cropModal.style.display = 'none';
-
-        try {
-          const uploadPayload = new FormData();
-          uploadPayload.append('file', croppedBlob, 'avatar.jpg');
-          uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
-
-          const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
-            method: 'POST',
-            body: uploadPayload
-          });
-
-          if (!serverResponse.ok) {
-            const errDetails = await serverResponse.json().catch(() => ({}));
-            throw new Error(errDetails.error?.message || 'Cloudinary upload failed.');
-          }
-          
-          const parsedResponseData = await serverResponse.json();
-          const cleanSecureUrl = parsedResponseData.secure_url;
-
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          
-          const { data, error: dbError } = await supabaseClient
-            .from('profiles')
-            .update({ avatar_url: cleanSecureUrl }) 
-            .eq('id', user.id)
-            .select();
-
-          if (dbError) throw dbError;
-
-          currentUser.photo = cleanSecureUrl;
-          document.getElementById('profAvatar').src = cleanSecureUrl;
-          if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
-          if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
-
-          alert("Profile photo updated permanently!");
-          
-          loadFeedStream();
-          renderProfileTimeline();
-
-        } catch (err) {
-          console.error("Database Save Error:", err);
-          alert("Error: " + err.message);
-        } finally {
-          changeBtn.disabled = false;
-          changeBtn.textContent = "Change Photo";
-          document.getElementById('avatarFileSelector').value = '';
-        }
-      }).catch(function(cropErr) {
-        alert("Failed to render the cropped photo region.");
-        cropModal.style.display = 'none';
-        changeBtn.disabled = false;
-        changeBtn.textContent = "Change Photo";
-      });
-    });
-
-   // 4. Authenticate User & Fetch Cloud Public Profile
+    // Initialize User Data Profile
     async function initUserProfile() {
       if (!supabaseClient) {
         applyProfileViewUIChange(true);
         return;
       }
       try {
-        // Fetch current authenticated session
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-        
         if (authError || !user) {
-          console.warn("No active session found. Please sign in.");
           applyProfileViewUIChange(true);
           return;
         }
 
-        // Try getting custom profile row
-        const { data: profile, error: dbError } = await supabaseClient
+        const { data: profile } = await supabaseClient
           .from('profiles')
-          .select('id, full_name, cluster, local_church, avatar_url, email') 
+          .select('*')
           .eq('id', user.id)
-          .maybeSingle(); // Prevents throwing hard errors if row doesn't exist yet
+          .maybeSingle();
 
-        // Set baseline parameters from auth metadata
         currentUser.id = user.id;
         currentUser.email = user.email || currentUser.email;
         currentUser.name = user.user_metadata?.full_name || "User Account";
 
-        // Overlay custom profile settings if present
         if (profile) {
           currentUser.name = profile.full_name || currentUser.name;
           currentUser.email = profile.email || currentUser.email; 
@@ -459,29 +262,22 @@
           currentUser.photo = profile.avatar_url || currentUser.photo;
         }
 
-        const baseSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
-        if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = currentUser.photo || baseSvg;
-        if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = currentUser.photo || baseSvg;
+        document.getElementById('composerAvatar').src = currentUser.photo || baseDefaultSvg;
+        document.getElementById('profileComposerAvatar').src = currentUser.photo || baseDefaultSvg;
 
         applyProfileViewUIChange(true);
-        checkUnreadNotificationsCount();
-        setInterval(checkUnreadNotificationsCount, 15000);
-
       } catch (err) {
-        console.error("Profile load error:", err.message);
+        console.error("Profile load error:", err);
         applyProfileViewUIChange(true);
       } finally {
         loadFeedStream();
       }
     }
 
-    // 5. Load Public Global Newsfeed Feed From Supabase
+    // Pull Global Feed Stream
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
-      if (!supabaseClient) {
-        stream.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top:40px;">Please configure your Supabase Credentials.</p>`;
-        return;
-      }
+      if (!supabaseClient) return;
       try {
         const { data: posts, error } = await supabaseClient
           .from('posts')
@@ -489,40 +285,31 @@
           .order('createdat', { ascending: false });
 
         if (error) throw error;
-
         stream.innerHTML = '';
+
         if (!posts || posts.length === 0) {
           stream.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top:40px;">No threads shared yet.</p>`;
           return;
         }
 
-        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url, email, full_name, cluster, local_church');
-        const { data: globalLikes } = await supabaseClient.from('likes').select('post_id, user_id');
+        const { data: profiles } = await supabaseClient.from('profiles').select('*');
+        const { data: globalLikes } = await supabaseClient.from('likes').select('*');
 
         const profileMap = {};
-        const profileEmailMap = {};
-        if (profiles) {
-          profiles.forEach(p => { 
-            profileMap[p.id] = p; 
-            if (p.email) profileEmailMap[p.email] = p;
-          });
-        }
+        if (profiles) profiles.forEach(p => { profileMap[p.id] = p; });
 
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
           
-          let linkedUserRecord = null;
-          if (post.user_id && profileMap[post.user_id]) linkedUserRecord = profileMap[post.user_id];
-          else if (post.email && profileEmailMap[post.email]) linkedUserRecord = profileEmailMap[post.email];
+          // Match profile photo dynamically from profiles directory or fall back to metadata row
+          let activeProfile = profileMap[post.user_id];
+          let avatarSrc = activeProfile?.avatar_url || post.avatar_url || baseDefaultSvg;
+          let displayName = activeProfile?.full_name || post.name || 'Anonymous';
 
-          let avatarSrc = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
-          if (linkedUserRecord && linkedUserRecord.avatar_url) avatarSrc = linkedUserRecord.avatar_url;
-          else if (post.avatar_url) avatarSrc = post.avatar_url;
-
-          if (currentUser && post.email === currentUser.email && currentUser.photo) {
+          if (post.user_id === currentUser.id && currentUser.photo) {
             avatarSrc = currentUser.photo;
           }
-          
+
           const postLikesList = globalLikes?.filter(l => String(l.post_id) === String(post.id)) || [];
           const userHasLiked = postLikesList.some(l => l.user_id === currentUser.id);
 
@@ -532,98 +319,87 @@
             if (parent) {
               quoteMarkup = `
                 <div class="quote-reference-box">
-                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name}</div>
+                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name || 'User'}</div>
                   <div style="color:#94a3b8;">${formatPostContentText(parent.content, profiles)}</div>
                 </div>`;
             }
           }
 
-          let textMarkup = post.content ? `<div class="thread-content">${formatPostContentText(post.content, profiles)}</div>` : '';
-          let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
-          
           const card = document.createElement('div');
           card.className = 'thread-card';
-          
           card.innerHTML = `
             <div class="thread-header">
-              <img class="thread-avatar clickable-target" src="${avatarSrc}" data-email="${post.email || ''}">
+              <img class="thread-avatar clickable-target" src="${avatarSrc}" data-uid="${post.user_id || ''}">
               <div>
-                <div class="thread-user clickable-target" data-email="${post.email || ''}">@${post.name || 'Anonymous'}</div>
+                <div class="thread-user clickable-target" data-uid="${post.user_id || ''}">@${displayName}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${time}</div>
               </div>
             </div>
-            ${textMarkup}
-            ${imageMarkup}
+            <div class="thread-content">${formatPostContentText(post.content, profiles)}</div>
             ${quoteMarkup}
             <div class="post-actions-bar">
               <button class="action-trigger ${userHasLiked ? 'liked' : ''}" onclick="toggleLikePost(event, '${post.id}', ${userHasLiked}, '${post.user_id || ''}')">
                 ❤️ <span>${postLikesList.length}</span>
               </button>
-              <button class="action-trigger" onclick="event.stopPropagation(); openQuoteModal('${post.id}', '${post.name || 'Anonymous'}', \`${(post.content || '').replace(/`/g, '\\`').replace(/\n/g, ' ')}\`)" style="cursor:pointer;">
+              <button class="action-trigger" onclick="openQuoteModal('${post.id}', '${displayName}', \`${(post.content || '').replace(/`/g, '\\`').replace(/\n/g, ' ')}\`)">
                 🔄 Share Quote
               </button>
             </div>
           `;
 
-          card.querySelectorAll('.clickable-target').forEach(element => {
-            element.addEventListener('click', function() {
-              const targetEmail = this.getAttribute('data-email');
-              if (targetEmail) navigateToUserByEmail(targetEmail);
+          card.querySelectorAll('.clickable-target').forEach(el => {
+            el.addEventListener('click', function() {
+              const uid = this.getAttribute('data-uid');
+              if (uid) navigateToUserById(uid);
             });
           });
 
           stream.appendChild(card);
         });
-      } catch (err) {
-        console.error("Feed rendering runtime error:", err);
-        stream.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to pull live cloud feed.</p>`;
-      }
+      } catch (err) { console.error(err); }
     }
 
-    // 6. Submit New Thread Post (Home tab)
+    // Submit Feed Post
     document.getElementById('inlineThreadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      if (!supabaseClient) return;
       const text = document.getElementById('inlineThreadContent');
-      const status = document.getElementById('inlinePostStatus');
-      const btn = document.getElementById('publishBtn');
-
-      status.style.color = '#94a3b8';
-      status.textContent = 'Publishing thread...';
-      btn.disabled = true;
+      if (!supabaseClient || !text.value.trim()) return;
 
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-
-        const { data: newPost, error } = await supabaseClient.from('posts').insert([
-          { 
-            user_id: user.id,
-            name: currentUser.name, 
-            email: currentUser.email, 
-            content: text.value,
-            avatar_url: currentUser.photo,
-            createdat: new Date().toISOString()
-          }
-        ]).select().single();
-
-        if (error) throw error;
-
-        await scanAndTriggerMentions(text.value, newPost.id);
-
+        await supabaseClient.from('posts').insert([{ 
+          user_id: currentUser.id,
+          name: currentUser.name, 
+          email: currentUser.email, 
+          content: text.value,
+          avatar_url: currentUser.photo,
+          createdat: new Date().toISOString()
+        }]);
         text.value = '';
-        status.style.color = '#16a34a';
-        status.textContent = 'Thread shared!';
         loadFeedStream();
-        setTimeout(() => { status.textContent = ''; }, 2000);
-      } catch (err) {
-        status.style.color = '#ef4444';
-        status.textContent = 'Database rejection.';
-      } finally {
-        btn.disabled = false;
-      }
+      } catch (err) { console.error(err); }
     });
 
-    // Interactive Heart Likes Logic
+    // Profile Composer Submission
+    document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const text = document.getElementById('profilePostContent');
+      if (!supabaseClient || !text.value.trim()) return;
+
+      try {
+        await supabaseClient.from('posts').insert([{
+          user_id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          content: text.value,
+          avatar_url: currentUser.photo,
+          createdat: new Date().toISOString()
+        }]);
+        text.value = '';
+        renderProfileTimeline();
+      } catch (err) { console.error(err); }
+    });
+
+    // Hearts Toggle Functionality
     async function toggleLikePost(event, postId, currentlyLiked, postAuthorId) {
       if(event) event.stopPropagation();
       if (!supabaseClient || !currentUser.id) return;
@@ -632,26 +408,17 @@
           await supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
         } else {
           await supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }]);
-          
-          if (postAuthorId && postAuthorId !== currentUser.id) {
-            await supabaseClient.from('notifications').insert([{
-              receiver_id: postAuthorId,
-              sender_id: currentUser.id,
-              type: 'like',
-              post_id: postId
-            }]);
-          }
         }
         loadFeedStream();
       } catch(e) { console.error(e); }
     }
 
-    // Quote Modal Controller
+    // Quote Mechanics
     function openQuoteModal(postId, authorName, textSnippet) {
       activeShareTargetPostId = postId;
       document.getElementById('quoteModalTargetPreview').innerHTML = `
-        <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom: 2px;">@${authorName}</div>
-        <div style="color:#94a3b8; font-size:0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${textSnippet}</div>
+        <div style="font-weight:700; font-size:0.8rem; color:#6366f1;">@${authorName}</div>
+        <div style="color:#94a3b8; font-size:0.85rem;">${textSnippet}</div>
       `;
       document.getElementById('quoteShareModal').style.display = 'flex';
     }
@@ -666,7 +433,7 @@
       if (!activeShareTargetPostId || !supabaseClient) return;
 
       try {
-        const { data: newPost, error } = await supabaseClient.from('posts').insert([{
+        await supabaseClient.from('posts').insert([{
           user_id: currentUser.id,
           name: currentUser.name,
           email: currentUser.email,
@@ -674,239 +441,69 @@
           parent_post_id: activeShareTargetPostId,
           avatar_url: currentUser.photo,
           createdat: new Date().toISOString()
-        }]).select().single();
-
-        if (error) throw error;
-
-        const { data: parentPost } = await supabaseClient.from('posts').select('user_id').eq('id', activeShareTargetPostId).single();
-        if (parentPost && parentPost.user_id && parentPost.user_id !== currentUser.id) {
-          await supabaseClient.from('notifications').insert([{
-            receiver_id: parentPost.user_id,
-            sender_id: currentUser.id,
-            type: 'share',
-            post_id: newPost.id
-          }]);
-        }
-
+        }]);
         closeQuoteModal();
         loadFeedStream();
         switchView('feedView', 'Home Feed', document.getElementById('navBtnFeed'));
       } catch (err) { console.error(err); }
     });
 
-    // Notifications Activity Pipeline
-    async function loadNotificationsPipeline() {
-      const feed = document.getElementById('notificationsWrapperFeed');
-      if (!supabaseClient || !currentUser.id) return;
-
-      try {
-        const { data: notifs, error } = await supabaseClient
-          .from('notifications')
-          .select('id, type, created_at, is_read, post_id, sender_id')
-          .eq('receiver_id', currentUser.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name');
-        const profMap = {};
-        if (profiles) profiles.forEach(p => profMap[p.id] = p);
-
-        feed.innerHTML = '';
-        if (!notifs || notifs.length === 0) {
-          feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">Your activity pipeline is empty.</p>';
-          return;
-        }
-
-        notifs.forEach(n => {
-          const sender = profMap[n.sender_id];
-          const senderName = sender ? sender.full_name : "Someone";
-          let labelText = "", icon = "🔔";
-
-          if (n.type === 'like') { icon = "❤️"; labelText = `<b>${senderName}</b> loved your thread.`; }
-          else if (n.type === 'mention') { icon = "💬"; labelText = `<b>${senderName}</b> mentioned you in a thread.`; }
-          else if (n.type === 'share') { icon = "🔄"; labelText = `<b>${senderName}</b> quote-shared your thread on their timeline.`; }
-
-          const row = document.createElement('div');
-          row.className = `notif-card ${!n.is_read ? 'unread' : ''}`;
-          row.innerHTML = `
-            <div class="notif-icon">${icon}</div>
-            <div class="notif-body">
-              <div>${labelText}</div>
-              <div class="notif-time">${new Date(n.created_at).toLocaleString()}</div>
-            </div>
-          `;
-          
-          row.style.cursor = 'pointer';
-          row.addEventListener('click', () => {
-            switchView('feedView', 'Home Feed', document.getElementById('navBtnFeed'));
-          });
-          feed.appendChild(row);
-        });
-      } catch (e) { console.error(e); }
-    }
-
-    async function checkUnreadNotificationsCount() {
-      if (!supabaseClient || !currentUser.id) return;
-      const { count } = await supabaseClient
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', currentUser.id)
-        .eq('is_read', false);
-      
-      document.getElementById('notifDot').style.display = count > 0 ? 'block' : 'none';
-    }
-
-    async function clearNotificationBadge() {
-      if (!supabaseClient || !currentUser.id) return;
-      await supabaseClient.from('notifications').update({ is_read: true }).eq('receiver_id', currentUser.id);
-      document.getElementById('notifDot').style.display = 'none';
-    }
-
-    // 7. Handle Image Attachment Preview Configurations
-    const profilePhotoInput = document.getElementById('profilePhotoInput');
-    const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
-    const profileImagePreview = document.getElementById('profileImagePreview');
-    const profilePostContent = document.getElementById('profilePostContent');
-
-    profilePhotoInput.addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) {
-        selectedFileObject = e.target.files[0];
-        const localBrowserUrl = URL.createObjectURL(selectedFileObject);
-        
-        profileImagePreview.src = localBrowserUrl;
-        profileImagePreviewContainer.style.display = 'block';
-        profilePostContent.required = false;
-      }
-    });
-
-    document.getElementById('profileRemoveImageBtn').addEventListener('click', function() {
-      selectedFileObject = null;
-      profileImagePreview.src = '';
-      profileImagePreviewContainer.style.display = 'none';
-      profilePhotoInput.value = '';
-      if (!profilePostContent.value.trim()) {
-        profilePostContent.required = true;
-      }
-    });
-
-    // 8. Profile Interactive Form Submission + Cloudinary Engine
-    document.getElementById('profilePostForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      if (!supabaseClient) return;
-      const textVal = profilePostContent.value.trim();
-      const submitBtn = this.querySelector('.submit-post-btn');
-
-      if (!textVal && !selectedFileObject) return;
-
-      try {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Uploading...';
-
-        let finalCloudAssetUrl = null;
-
-        if (selectedFileObject instanceof File && selectedFileObject.size > 0) {
-          const uploadPayload = new FormData();
-          uploadPayload.append('file', selectedFileObject);
-          uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
-
-          const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
-            method: 'POST',
-            body: uploadPayload
-          });
-
-          if (!serverResponse.ok) {
-            const errorDetails = await serverResponse.json().catch(() => ({}));
-            throw new Error(errorDetails.error?.message || 'Cloudinary Asset upload failed.');
-          }
-
-          const parsedResponseData = await serverResponse.json();
-          finalCloudAssetUrl = parsedResponseData.secure_url;
-        }
-
-        const { data: { user } } = await supabaseClient.auth.getUser();
-
-        const { data: newPost, error } = await supabaseClient.from('posts').insert([
-          {
-            user_id: user.id,
-            name: currentUser.name,
-            email: currentUser.email,
-            content: textVal,
-            image_url: finalCloudAssetUrl,
-            avatar_url: currentUser.photo,
-            createdat: new Date().toISOString()
-          }
-        ]).select().single();
-
-        if (error) throw error;
-
-        await scanAndTriggerMentions(textVal, newPost.id);
-
-        profilePostContent.value = '';
-        profilePostContent.style.height = 'auto';
-        document.getElementById('profileRemoveImageBtn').click();
-        await renderProfileTimeline();
-      } catch (err) {
-        alert(err.message || 'Error occurred handling cloud database submission loop.');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Post';
-      }
-    });
-
-    // 9. Load Community Directory ("People" Tab)
+    // Directory Loader (Shows EVERY registered user)
     async function loadPeopleDirectory() {
       const container = document.getElementById('peopleDirectoryList');
-      if(!supabaseClient) {
-        container.innerHTML = '<p style="color:#64748b; text-align:center;">Configure database connection setup entries.</p>';
-        return;
-      }
-      container.innerHTML = '<p style="color:#64748b; text-align:center;">Scanning community rosters...</p>';
+      if(!supabaseClient) return;
       
       try {
         const { data: usersList, error } = await supabaseClient
           .from('profiles')
-          .select('id, full_name, email, cluster, local_church, avatar_url')
+          .select('*')
           .order('full_name', { ascending: true });
           
         if(error) throw error;
-        
         container.innerHTML = '';
+        
         if(!usersList || usersList.length === 0) {
-          container.innerHTML = '<p style="color:#64748b; text-align:center;">No other users have registered accounts inside this shard.</p>';
+          container.innerHTML = '<p style="color:#64748b; text-align:center;">No users registered yet.</p>';
           return;
         }
         
         usersList.forEach(userRecord => {
-          const userAvatar = userRecord.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          const userAvatar = userRecord.avatar_url || baseDefaultSvg;
           const userSubtext = `${userRecord.cluster || 'No Cluster'} • ${userRecord.local_church || 'General Church'}`;
           
           const row = document.createElement('div');
           row.className = 'user-dir-item';
           row.innerHTML = `
             <div class="user-dir-info">
-              <img class="thread-avatar clickable-target" src="${userAvatar}" alt="Peer">
+              <img class="thread-avatar clickable-target" src="${userAvatar}" data-uid="${userRecord.id}">
               <div>
-                <div class="thread-user clickable-target" style="color:#fff;">${userRecord.full_name || 'Anonymous User'}</div>
+                <div class="thread-user clickable-target" data-uid="${userRecord.id}">@${userRecord.full_name || 'Anonymous User'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${userSubtext}</div>
               </div>
             </div>
-            <button class="view-profile-action-btn" onclick="navigateToUserByEmail('${userRecord.email}')">View</button>
+            <button class="view-profile-action-btn" onclick="navigateToUserById('${userRecord.id}')">View</button>
           `;
+
+          row.querySelectorAll('.clickable-target').forEach(el => {
+            el.addEventListener('click', function() {
+              navigateToUserById(this.getAttribute('data-uid'));
+            });
+          });
+
           container.appendChild(row);
         });
-      } catch(e) { 
-        console.error(e); 
-        container.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to pull community records.</p>';
-      }
+      } catch(e) { console.error(e); }
     }
 
-    async function navigateToUserByEmail(email) {
-      if (email === currentUser.email) { resetToOwnProfile(); return; }
+    async function navigateToUserById(userId) {
+      if (userId === currentUser.id) { resetToOwnProfile(); return; }
       try {
-        const { data: p } = await supabaseClient.from('profiles').select('*').eq('email', email).single();
+        const { data: p } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
         if (p) {
-          selectedTargetProfileUser = { name: p.full_name, email: p.email, cluster: p.cluster, church: p.local_church, photo: p.avatar_url };
+          selectedTargetProfileUser = { 
+            id: p.id, name: p.full_name, email: p.email, 
+            cluster: p.cluster, church: p.local_church, photo: p.avatar_url 
+          };
           applyProfileViewUIChange(false);
         }
       } catch (e) { console.error(e); }
@@ -917,15 +514,14 @@
       applyProfileViewUIChange(true); 
     }
 
+    // Profile View UI Syncing Card
     function applyProfileViewUIChange(isOwnProfile) {
       const active = isOwnProfile ? currentUser : selectedTargetProfileUser;
       
       document.getElementById('profName').textContent = active.name || 'Anonymous';
       document.getElementById('profEmail').textContent = active.email || '';
-      document.getElementById('profDetails').textContent = `${active.cluster || 'General'} • ${active.church || 'YouthSphere'}`;
-      
-      const baseSvg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
-      document.getElementById('profAvatar').src = active.photo || baseSvg;
+      document.getElementById('profDetails').textContent = `${active.cluster || 'No Cluster'} • ${active.church || 'General Church'}`;
+      document.getElementById('profAvatar').src = active.photo || baseDefaultSvg;
       
       document.getElementById('profileContextBanner').style.display = isOwnProfile ? 'none' : 'flex';
       document.getElementById('avatarControlWrapper').style.display = isOwnProfile ? 'block' : 'none';
@@ -934,69 +530,50 @@
       document.getElementById('timelineHeadingText').textContent = isOwnProfile ? "My Timeline" : `${active.name}'s Timeline`;
       
       renderProfileTimeline();
-      switchView('profileView', isOwnProfile ? 'Profile' : `@${active.name}`, document.getElementById('navBtnProfile'));
     }
 
+    // Profile Timeline Stream
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
-      
-      // Look up posts using user database IDs instead of easily-mutated email strings
       const targetUserId = selectedTargetProfileUser ? selectedTargetProfileUser.id : currentUser.id;
 
       try {
-        const { data: posts, error } = await supabaseClient
+        const { data: posts } = await supabaseClient
           .from('posts')
           .select('*')
           .eq('user_id', targetUserId)
           .order('createdat', { ascending: false });
 
-        if (error) throw error;
-
         feed.innerHTML = '';
         if(!posts || posts.length === 0) {
-          feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No timeline updates shared.</p>';
+          feed.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">No updates shared here yet.</p>';
           return;
         }
 
-        const { data: profiles } = await supabaseClient.from('profiles').select('id, avatar_url, email, full_name');
-
         posts.forEach(post => {
-          let textMarkup = post.content ? `<div class="thread-content" style="padding-left:0; margin-top:6px;">${formatPostContentText(post.content, profiles)}</div>` : '';
-          let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:100%; border-radius:12px; margin-top:10px; max-height:300px; object-fit:cover;" />` : '';
-          
+          let textMarkup = post.content ? `<div class="thread-content" style="padding-left:0; margin-top:6px;">${post.content}</div>` : '';
           let quoteMarkup = "";
           if (post.parent_post_id) {
-            const parent = posts.find(p => String(p.id) === String(post.parent_post_id));
-            if (parent) {
-              quoteMarkup = `
-                <div class="quote-reference-box" style="margin-left:0;">
-                  <div style="font-weight:700; font-size:0.8rem; color:#6366f1; margin-bottom:4px;">Shared @${parent.name || 'Anonymous'}</div>
-                  <div style="color:#94a3b8;">${parent.content || ''}</div>
-                </div>`;
-            }
+            quoteMarkup = `<div class="quote-reference-box" style="margin-left:0;"><div style="color:#94a3b8; font-size:0.85rem;">[Shared Reference Block]</div></div>`;
           }
 
           const card = document.createElement('div');
           card.className = 'thread-card';
           card.innerHTML = `
             <div class="thread-header">
-              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4='}">
+              <img class="thread-avatar" src="${post.avatar_url || (selectedTargetProfileUser ? selectedTargetProfileUser.photo : currentUser.photo) || baseDefaultSvg}">
               <div>
                 <div class="thread-user">@${post.name || 'Anonymous'}</div>
                 <div style="font-size:0.75rem; color:#64748b;">${post.createdat ? new Date(post.createdat).toLocaleString() : ''}</div>
               </div>
             </div>
             ${textMarkup}
-            ${imageMarkup}
             ${quoteMarkup}
           `;
           feed.appendChild(card);
         });
-      } catch(e) { 
-        console.error("Timeline error:", e);
-        feed.innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">Failed to load timeline.</p>';
-      }
+      } catch(e) { console.error(e); }
     }
 
     async function logout() {
