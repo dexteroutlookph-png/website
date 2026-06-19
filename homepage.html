@@ -367,7 +367,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       }
     }
 
-    // 4. Load Public Global Newsfeed Feed From Supabase
+    // 4. Load Public Global Newsfeed Feed From Supabase (Auto-Syncing Profile Photos)
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) {
@@ -375,9 +375,13 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
         return;
       }
       try {
+        // SQL Join: Fetch posts AND grab the current avatar_url directly from the profiles relationship
         const { data: posts, error } = await supabaseClient
           .from('posts')
-          .select('*')
+          .select(`
+            id, name, email, content, image_url, createdat,
+            profiles ( avatar_url )
+          `)
           .order('createdat', { ascending: false });
 
         if (error) throw error;
@@ -390,7 +394,9 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
         posts.forEach(post => {
           const time = post.createdat ? new Date(post.createdat).toLocaleString() : 'Just now';
-          let avatarSrc = post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
+          
+          // Use the newest profile table photo, fallback to post value, fallback to default placeholder
+          let avatarSrc = post.profiles?.avatar_url || post.avatar_url || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM0MzM4Y2EiLz48L3N2Zz4=";
           
           let textMarkup = post.content ? `<div class="thread-content">${post.content}</div>` : '';
           let imageMarkup = post.image_url ? `<img src="${post.image_url}" style="width:calc(100% - 50px); border-radius:12px; margin:10px 0 0 50px; max-height:350px; object-fit:cover; background:#11192e; border:1px solid #243249;" alt="Feed Asset" />` : '';
@@ -411,6 +417,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
           stream.appendChild(card);
         });
       } catch (err) {
+        console.error(err);
         stream.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to pull live cloud feed.</p>`;
       }
     }
