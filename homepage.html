@@ -193,7 +193,6 @@ document.getElementById('cancelCropBtn').addEventListener('click', () => {
 });
 
 // Process crop data and push up to the clouds
-// Process crop data and push up to the clouds
 document.getElementById('saveCropBtn').addEventListener('click', function() {
   if (!activeCropperInstance) return;
   
@@ -202,9 +201,8 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
   
   changeBtn.disabled = true;
   changeBtn.textContent = "Processing...";
-  cropModal.style.display = 'none'; // Dismiss modal window during processing
 
-  // Use the reliable .then() callback chain to guarantee the Blob finishes rendering
+  // CRITICAL FIX: Render the image BEFORE hiding the modal container layout
   activeCropperInstance.result({
     type: 'blob',
     size: 'viewport',
@@ -213,6 +211,9 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
     if (!croppedBlob) {
       throw new Error("Cropper background engine failed to generate an output file.");
     }
+
+    // Now that the blob is safely compiled, we can dim the modal UI safely
+    cropModal.style.display = 'none';
 
     try {
       // 1. Build Payload and push to Cloudinary
@@ -261,6 +262,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
   }).catch(function(cropErr) {
     console.error("Cropping extraction failure:", cropErr);
     alert("Failed to render the cropped photo region.");
+    cropModal.style.display = 'none'; // Clear the modal if a native error happened
     changeBtn.disabled = false;
     changeBtn.textContent = "Change Photo";
   });
