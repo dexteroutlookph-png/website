@@ -786,32 +786,17 @@
         });
       } catch(e) { console.error(e); }
     }
-    // Complete Deletion Pipeline (Database Row Drop + Storage Bucket File Wipe)
+    // Complete Deletion Pipeline (Database Row Drop)
     async function executePostDeletion(postId, imageUrl) {
       if (!postId || !supabaseClient) return;
       
-      if (!confirm("Are you sure you want to permanently delete this post? This will also remove any attached media from storage.")) {
+      // 1. Ask confirmation
+      if (!confirm("Are you sure you want to permanently delete this post?")) {
         return;
       }
 
       try {
-        // Parse out image unique filename from bucket path to sanitize asset
-        if (imageUrl && imageUrl.includes('/avatars/')) {
-          try {
-            const urlParts = imageUrl.split('/avatars/');
-            const storageFilename = urlParts[urlParts.length - 1];
-            if (storageFilename) {
-              await supabaseClient.storage.from('avatars').remove([storageFilename]);
-            }
-          } catch(storageErr) {
-            console.warn("Storage item sanitation bypass warning:", storageErr);
-          }
-        }
-
-        // Drop visual element item instantly from layout viewpoint view container
-        const targetedCard = document.getElementById(`profile-post-card-${postId}`);
-        if (targetedCard) targetedCard.remove();
-
+        // 2. Delete from database
         const { error } = await supabaseClient
           .from('posts')
           .delete()
@@ -819,10 +804,18 @@
           .eq('user_id', currentUser.id);
 
         if (error) throw error;
+
+        // 3. Delete from the website interface instantly
+        const targetedCard = document.getElementById(`profile-post-card-${postId}`);
+        if (targetedCard) targetedCard.remove();
+        
+        // Also remove from the main home feed stream if it's rendered there
+        const mainFeedCard = document.getElementById(`post-card-${postId}`);
+        if (mainFeedCard) mainFeedCard.remove();
+
       } catch (err) {
         console.error("Failed to delete post:", err);
-        alert("Could not complete delete transaction safely. Re-syncing stream.");
-        renderProfileTimeline();
+        alert("Could not complete delete transaction safely.");
       }
     }
 
