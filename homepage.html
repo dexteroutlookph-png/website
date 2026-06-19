@@ -211,6 +211,9 @@
     // Local Base64 staging variables
     let stagedFeedFileBase64 = null;
     let stagedProfileFileBase64 = null;
+    
+    // In-memory cache to maintain smooth state transitions
+    let cachedGlobalLikesList = [];
 
     try {
       if (typeof supabase !== 'undefined') {
@@ -374,7 +377,7 @@
       }
     }
 
-    // Pull Global Feed Stream (With dynamic image rendering & tolerant likes handling)
+    // Pull Global Feed Stream
     async function loadFeedStream() {
       const stream = document.getElementById('newsfeedStream');
       if (!supabaseClient) return;
@@ -394,11 +397,9 @@
 
         const { data: profiles } = await supabaseClient.from('profiles').select('*');
         
-        // Fault tolerant likes query handler to completely safeguard against 404 table absence errors
-        let globalLikes = [];
         try {
           const { data: likesRes, error: likesErr } = await supabaseClient.from('likes').select('*');
-          if (!likesErr && likesRes) globalLikes = likesRes;
+          if (!likesErr && likesRes) cachedGlobalLikesList = likesRes;
         } catch(lkErr) { console.warn("Likes table parsing bypass:", lkErr); }
 
         const profileMap = {};
@@ -415,7 +416,7 @@
             avatarSrc = currentUser.photo;
           }
 
-          const postLikesList = globalLikes.filter(l => String(l.post_id) === String(post.id));
+          const postLikesList = cachedGlobalLikesList.filter(l => String(l.post_id) === String(post.id));
           const userHasLiked = postLikesList.some(l => String(l.user_id) === String(currentUser.id));
 
           let imageMarkup = "";
@@ -442,6 +443,7 @@
 
           const card = document.createElement('div');
           card.className = 'thread-card';
+          card.id = `post-card-${post.id}`;
           card.innerHTML = `
             <div class="thread-header">
               <img class="thread-avatar clickable-target" src="${avatarSrc}" data-uid="${post.user_id || ''}">
@@ -454,7 +456,7 @@
             ${imageMarkup}
             ${quoteMarkup}
             <div class="post-actions-bar">
-              <button class="action-trigger ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
+              <button class="action-trigger like-trigger-btn ${userHasLiked ? 'liked' : ''}" data-postid="${post.id}" data-liked="${userHasLiked}">
                 ❤️ <span>${postLikesList.length}</span>
               </button>
               <button class="action-trigger quote-action-trigger" data-postid="${post.id}" data-author="${displayName}" data-content="${(post.content || '').replace(/"/g, '&quot;')}" style="cursor:pointer;">
@@ -473,17 +475,17 @@
             });
           });
 
-          // Dynamic Likes Event Assignment
-          card.querySelector(`.action-trigger[data-postid="${post.id}"]`).addEventListener('click', function(e) {
+          // Dynamic Likes Event Assignment (Optimized for instant toggling without page refreshing)
+          card.querySelector(`.like-trigger-btn`).addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             const pid = this.getAttribute('data-postid');
             const isLiked = this.getAttribute('data-liked') === 'true';
-            toggleLikePost(pid, isLiked);
+            toggleLikePostInstant(this, pid, isLiked);
           });
 
           // Dynamic Quote Assignment
-          card.querySelector(`.quote-action-trigger[data-postid="${post.id}"]`).addEventListener('click', function(e) {
+          card.querySelector(`.quote-action-trigger`).addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             openQuoteModal(
@@ -496,6 +498,41 @@
           stream.appendChild(card);
         });
       } catch (err) { console.error(err); }
+    }
+
+    // Instant UI Update Layer for Hearts (No refresh cycle)
+    async function toggleLikePostInstant(btnElement, postId, currentlyLiked) {
+      if (!supabaseClient || !currentUser.id) return;
+      
+      const countLabel = btnElement.querySelector('span');
+      let currentCount = parseInt(countLabel.textContent) || 0;
+      
+      // Update the UI state instantly to make it feel fast
+      if (currentlyLiked) {
+        btnElement.classList.remove('liked');
+        btnElement.setAttribute('data-liked', 'false');
+        currentCount = Math.max(0, currentCount - 1);
+        countLabel.textContent = currentCount;
+        
+        // Clean out cache internally
+        cachedGlobalLikesList = cachedGlobalLikesList.filter(l => !(String(l.post_id) === String(postId) && String(l.user_id) === String(currentUser.id)));
+        
+        // Execute background remote database cleanup
+        supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId)
+          .then(({error}) => { if(error) console.error(error); });
+      } else {
+        btnElement.classList.add('liked');
+        btnElement.setAttribute('data-liked', 'true');
+        currentCount += 1;
+        countLabel.textContent = currentCount;
+        
+        // Feed mock tracking item into cache
+        cachedGlobalLikesList.push({ user_id: currentUser.id, post_id: postId });
+        
+        // Execute background remote sync insert transaction
+        supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }])
+          .then(({error}) => { if(error) console.error(error); });
+      }
     }
 
     // Submit Feed Post
@@ -571,19 +608,6 @@
       } catch (err) { console.error(err); }
     });
 
-    // Hearts Toggle Functionality
-    async function toggleLikePost(postId, currentlyLiked) {
-      if (!supabaseClient || !currentUser.id) return;
-      try {
-        if (currentlyLiked) {
-          await supabaseClient.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
-        } else {
-          await supabaseClient.from('likes').insert([{ user_id: currentUser.id, post_id: postId }]);
-        }
-        loadFeedStream();
-      } catch(e) { console.error("Heart save attempt failure:", e); }
-    }
-
     // Quote Mechanics
     function openQuoteModal(postId, authorName, textSnippet) {
       activeShareTargetPostId = postId;
@@ -604,12 +628,13 @@
       if (!activeShareTargetPostId || !supabaseClient) return;
 
       try {
+        // Explicit layout mapping verification to handle UUID formatting strings cleanly
         await supabaseClient.from('posts').insert([{
           user_id: currentUser.id,
           name: currentUser.name,
           email: currentUser.email,
           content: commentary || null,
-          parent_post_id: activeShareTargetPostId,
+          parent_post_id: activeShareTargetPostId, 
           avatar_url: currentUser.photo,
           createdat: new Date().toISOString()
         }]);
@@ -706,7 +731,7 @@
       renderProfileTimeline();
     }
 
-    // Profile Timeline Stream (With dynamic image rendering)
+    // Profile Timeline Stream
     async function renderProfileTimeline() {
       const feed = document.getElementById('profileTimelineFeed');
       if (!supabaseClient) return;
