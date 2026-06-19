@@ -192,6 +192,13 @@ document.getElementById('cancelCropBtn').addEventListener('click', () => {
   document.getElementById('avatarFileSelector').value = '';
 });
 
+
+
+    // Now that the blob is safely compiled, we can dim the modal UI safely
+    cropModal.style.display = 'none';
+
+    try {
+
 // Process crop data and push up to the clouds
 document.getElementById('saveCropBtn').addEventListener('click', function() {
   if (!activeCropperInstance) return;
@@ -202,7 +209,6 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
   changeBtn.disabled = true;
   changeBtn.textContent = "Processing...";
 
-  // CRITICAL FIX: Render the image BEFORE hiding the modal container layout
   activeCropperInstance.result({
     type: 'blob',
     size: 'viewport',
@@ -212,11 +218,10 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
       throw new Error("Cropper background engine failed to generate an output file.");
     }
 
-    // Now that the blob is safely compiled, we can dim the modal UI safely
     cropModal.style.display = 'none';
 
     try {
-      // 1. Build Payload and push to Cloudinary
+      // 1. Send file to Cloudinary
       const uploadPayload = new FormData();
       uploadPayload.append('file', croppedBlob, 'avatar.jpg');
       uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
@@ -228,8 +233,7 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
       if (!serverResponse.ok) {
         const errDetails = await serverResponse.json().catch(() => ({}));
-        console.error("Cloudinary Upload Reject Details:", errDetails);
-        throw new Error(errDetails.error?.message || 'Failed to sync asset payload up to Cloudinary storage servers.');
+        throw new Error(errDetails.error?.message || 'Cloudinary upload failed.');
       }
       
       const parsedResponseData = await serverResponse.json();
@@ -237,32 +241,44 @@ document.getElementById('saveCropBtn').addEventListener('click', function() {
 
       // 2. Sync to Supabase Profiles Table Layout
       const { data: { user } } = await supabaseClient.auth.getUser();
-      const { error: dbError } = await supabaseClient
+      
+      // We target 'avatar_url'. If your column is named 'photo' or 'avatar', change it below:
+      const { data, error: dbError } = await supabaseClient
         .from('profiles')
-        .update({ avatar_url: cleanSecureUrl })
-        .eq('id', user.id);
+        .update({ avatar_url: cleanSecureUrl }) 
+        .eq('id', user.id)
+        .select(); // Forces Supabase to return the updated data row
 
       if (dbError) throw dbError;
 
-      // 3. Hot-update current browser views live
+      // Check if Supabase silently ignored the update due to RLS
+      if (!data || data.length === 0) {
+        throw new Error("RLS Policy Blocked: The database accepted the request but refused to save it. Make sure your UPDATE policy is active for authenticated users.");
+      }
+
+      // 3. Update active states live
       currentUser.photo = cleanSecureUrl;
       document.getElementById('profAvatar').src = cleanSecureUrl;
       if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
       if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
 
-      alert("Profile photo cropped and synchronized successfully!");
+      alert("Profile photo updated permanently!");
+      
+      // Reload feed streams to show off the new avatar immediately
+      if (typeof loadFeedStream === 'function') loadFeedStream();
+      if (typeof renderProfileTimeline === 'function') renderProfileTimeline();
+
     } catch (err) {
-      console.error(err);
-      alert(err.message || "An unexpected error broke the profile photo synchronizer channel.");
+      console.error("Database Save Error:", err);
+      alert("Error: " + err.message);
     } finally {
       changeBtn.disabled = false;
       changeBtn.textContent = "Change Photo";
       document.getElementById('avatarFileSelector').value = '';
     }
   }).catch(function(cropErr) {
-    console.error("Cropping extraction failure:", cropErr);
     alert("Failed to render the cropped photo region.");
-    cropModal.style.display = 'none'; // Clear the modal if a native error happened
+    cropModal.style.display = 'none';
     changeBtn.disabled = false;
     changeBtn.textContent = "Change Photo";
   });
