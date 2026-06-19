@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="styles.css">
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
   <style>
     body { display: block; padding: 0; overflow-x: hidden; background-color: #0b1329; }
     .app-container { max-width: 600px; margin: 0 auto; padding-bottom: 90px; min-height: 100vh; display: flex; flex-direction: column; }
@@ -137,27 +138,83 @@
       <button class="nav-item" onclick="switchView('profileView', 'Profile', this)">Profile</button>
     </nav>
   </div>
-
+<div id="cropperModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center;">
+    <h3 style="color:#fff; margin-top:0;">Crop Profile Photo</h3>
+    <div id="cropperViewport" style="width:100%; height:250px; margin-bottom:20px;"></div>
+    <div style="display:flex; gap:10px; justify-content:center;">
+      <button type="button" id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>
+      <button type="button" id="saveCropBtn" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Crop & Upload</button>
+    </div>
+  </div>
+</div>
 <script>
 
-  // Change Profile Photo Routine
+  let activeCropperInstance = null;
+
+// Open file picker on click
 document.getElementById('changeAvatarBtn').addEventListener('click', () => {
   document.getElementById('avatarFileSelector').click();
 });
 
-document.getElementById('avatarFileSelector').addEventListener('change', async function(e) {
-  if (!e.target.files || e.target.files[0] == null) return;
+// Intercept selected image file and send to the Cropper Modal
+document.getElementById('avatarFileSelector').addEventListener('change', function(e) {
+  if (!e.target.files || !e.target.files[0]) return;
   
   const targetFile = e.target.files[0];
+  const fileReader = new FileReader();
+  
+  fileReader.onload = function(event) {
+    // Show the modal
+    const modal = document.getElementById('cropperModal');
+    modal.style.display = 'flex';
+    
+    // Destroy previous cropper instances if they exist
+    if (activeCropperInstance) activeCropperInstance.destroy();
+    
+    // Initialize circular cropper structure
+    activeCropperInstance = new Croppie(document.getElementById('cropperViewport'), {
+      viewport: { width: 150, height: 150, type: 'circle' },
+      boundary: { width: 250, height: 250 },
+      showZoomer: true
+    });
+    
+    // Bind your image to the tool window
+    activeCropperInstance.bind({ url: event.target.result });
+  };
+  
+  fileReader.readAsDataURL(targetFile);
+});
+
+// Dismiss cropping window cleanly
+document.getElementById('cancelCropBtn').addEventListener('click', () => {
+  document.getElementById('cropperModal').style.display = 'none';
+  document.getElementById('avatarFileSelector').value = '';
+});
+
+// Process crop data and push up to the clouds
+document.getElementById('saveCropBtn').addEventListener('click', async function() {
+  if (!activeCropperInstance) return;
+  
   const changeBtn = document.getElementById('changeAvatarBtn');
+  const cropModal = document.getElementById('cropperModal');
   
   try {
     changeBtn.disabled = true;
-    changeBtn.textContent = "Updating...";
+    changeBtn.textContent = "Processing...";
+    cropModal.style.display = 'none'; // Close modal UI during processing
 
-    // 1. Send the new image payload directly to Cloudinary
+    // Render cropped image selection output down to a high-quality blob file
+    const croppedBlob = await activeCropperInstance.result({
+      type: 'blob',
+      size: 'viewport',
+      format: 'jpeg',
+      circle: false // Keeps payload as standard raster background, viewport layer clips it to circle visually
+    });
+
+    // 1. Build Payload and push to Cloudinary
     const uploadPayload = new FormData();
-    uploadPayload.append('file', targetFile);
+    uploadPayload.append('file', croppedBlob, 'avatar.jpg');
     uploadPayload.append('upload_preset', CLOUDINARY_PRESET_NAME);
 
     const serverResponse = await fetch(CLOUDINARY_UPLOAD_URL, {
@@ -165,34 +222,38 @@ document.getElementById('avatarFileSelector').addEventListener('change', async f
       body: uploadPayload
     });
 
-    if (!serverResponse.ok) throw new Error('Failed to upload new profile asset to Cloudinary.');
+    if (!serverResponse.ok) {
+      const errDetails = await serverResponse.json().catch(() => ({}));
+      console.error("Cloudinary Upload Reject Details:", errDetails);
+      throw new Error(errDetails.error?.message || 'Failed to sync asset payload up to Cloudinary storage servers.');
+    }
     
     const parsedResponseData = await serverResponse.json();
     const cleanSecureUrl = parsedResponseData.secure_url;
 
-    // 2. Sync the resulting link over to Supabase
+    // 2. Sync to Supabase Profiles Table Layout
     const { data: { user } } = await supabaseClient.auth.getUser();
     const { error: dbError } = await supabaseClient
       .from('profiles')
-      .update({ avatar_url: cleanSecureUrl }) // Matches your database column layout
+      .update({ avatar_url: cleanSecureUrl })
       .eq('id', user.id);
 
     if (dbError) throw dbError;
 
-    // 3. Hot swap the local state variables so it updates live on the layout
+    // 3. Hot-update current browser views live
     currentUser.photo = cleanSecureUrl;
     document.getElementById('profAvatar').src = cleanSecureUrl;
     if(document.getElementById('composerAvatar')) document.getElementById('composerAvatar').src = cleanSecureUrl;
     if(document.getElementById('profileComposerAvatar')) document.getElementById('profileComposerAvatar').src = cleanSecureUrl;
 
-    alert("Profile photo updated successfully!");
+    alert("Profile photo cropped and synchronized successfully!");
   } catch (err) {
     console.error(err);
-    alert(err.message || "An error occurred while updating your profile picture.");
+    alert(err.message || "An unexpected error broke the profile photo synchronizer channel.");
   } finally {
     changeBtn.disabled = false;
     changeBtn.textContent = "Change Photo";
-    e.target.value = ''; // Reset selector choice
+    document.getElementById('avatarFileSelector').value = '';
   }
 });
     // 1. Navigation Controller (Moved to absolute top so tabs work instantly no matter what)
