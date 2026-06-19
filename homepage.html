@@ -789,14 +789,25 @@
     // Complete Deletion Pipeline (Database Row Drop)
     async function executePostDeletion(postId, imageUrl) {
       if (!postId || !supabaseClient) return;
-      
+
       // 1. Ask confirmation
       if (!confirm("Are you sure you want to permanently delete this post?")) {
         return;
       }
 
+      // 2. IMMEDIATELY remove it from the website UI so it disappears instantly
+      const targetedTimelineCard = document.getElementById(`profile-post-card-${postId}`);
+      if (targetedTimelineCard) {
+        targetedTimelineCard.remove();
+      }
+      
+      const targetedHomeFeedCard = document.getElementById(`post-card-${postId}`);
+      if (targetedHomeFeedCard) {
+        targetedHomeFeedCard.remove();
+      }
+
+      // 3. Delete it from the database in the background
       try {
-        // 2. Delete from database
         const { error } = await supabaseClient
           .from('posts')
           .delete()
@@ -804,18 +815,12 @@
           .eq('user_id', currentUser.id);
 
         if (error) throw error;
-
-        // 3. Delete from the website interface instantly
-        const targetedCard = document.getElementById(`profile-post-card-${postId}`);
-        if (targetedCard) targetedCard.remove();
-        
-        // Also remove from the main home feed stream if it's rendered there
-        const mainFeedCard = document.getElementById(`post-card-${postId}`);
-        if (mainFeedCard) mainFeedCard.remove();
-
       } catch (err) {
-        console.error("Failed to delete post:", err);
-        alert("Could not complete delete transaction safely.");
+        console.error("Failed to delete post from database:", err);
+        alert("The post was hidden, but could not be deleted from the database. Re-syncing...");
+        // Put the posts back if the database deletion actually failed
+        if (typeof renderProfileTimeline === 'function') renderProfileTimeline();
+        if (typeof loadFeedStream === 'function') loadFeedStream();
       }
     }
 
