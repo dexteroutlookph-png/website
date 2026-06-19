@@ -183,13 +183,13 @@
     </nav>
   </div>
 
-  <div id="avatarCropModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:12px; width:90%; max-width:440px;">
-      <h3 style="margin-top:0; color:#fff; text-align:center;">Crop Profile Photo</h3>
-      <div id="cropperViewportWrapper" style="width:100%; margin:15px 0;"></div>
+  <div id="cropperOverlayModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#11192e; border:1px solid #243249; padding:20px; border-radius:16px; width:90%; max-width:420px; text-align:center;">
+      <h3 style="margin-top:0; color:#fff;">Crop Profile Photo</h3>
+      <div id="croppieViewportContainer" style="width:100%; margin:20px 0;"></div>
       <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
-        <button id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer;">Cancel</button>
-        <button id="saveCropBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; font-weight:bold;">Crop & Save</button>
+        <button id="cancelCropBtn" style="background:#334155; color:#fff; border:none; padding:8px 20px; border-radius:20px; cursor:pointer;">Cancel</button>
+        <button id="saveCropBtn" style="background:#6366f1; color:#fff; border:none; padding:8px 20px; border-radius:20px; cursor:pointer; font-weight:bold;">Apply Crop</button>
       </div>
     </div>
   </div>
@@ -364,18 +364,45 @@
       }
     }
 
-   // Explicit event bridge hook for avatar selection management with automated square cropping
+   // Global instance tracker for the Croppie engine
+    let activeCroppieInstance = null;
+
+    // Cloudinary Setup Configurations
+    const CLOUDINARY_UPLOAD_PRESET = "YOUR_CLOUDINARY_PRESET"; 
+    const CLOUDINARY_CLOUD_NAME = "YOUR_CLOUD_NAME";
+
+    // Cloudinary Base64 Streaming Engine
+    async function uploadBase64ToCloudinary(base64Str) {
+      try {
+        const formData = new FormData();
+        formData.append("file", base64Str);
+        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) throw new Error("Cloudinary transfer faulted");
+        const data = await response.json();
+        return data.secure_url;
+      } catch (err) {
+        console.error("Cloudinary upload failure:", err);
+        return null;
+      }
+    }
+
+    // Interactive Cropper & Cloudinary Profile Sync Bridge
     function bindAvatarPickerActions() {
       const uploadTriggerBtn = document.getElementById('changeAvatarBtn');
       const hiddenFileSelector = document.getElementById('avatarFileSelector');
 
       if (!uploadTriggerBtn || !hiddenFileSelector) return;
 
-      // Clean up previous event listeners on BOTH elements by cloning them
+      // Ensure fresh instances to purge listener leaks completely
       uploadTriggerBtn.replaceWith(uploadTriggerBtn.cloneNode(true));
       hiddenFileSelector.replaceWith(hiddenFileSelector.cloneNode(true));
 
-      // Re-grab the active elements from the DOM
       const activeUploadBtn = document.getElementById('changeAvatarBtn');
       const activeFileSelector = document.getElementById('avatarFileSelector');
 
@@ -383,70 +410,93 @@
         activeFileSelector.click();
       });
 
-      activeFileSelector.addEventListener('change', async function() {
+      activeFileSelector.addEventListener('change', function() {
         if (!this.files || !this.files[0]) return;
         
         const selectedFile = this.files[0];
         const reader = new FileReader();
 
-        activeUploadBtn.textContent = "Processing...";
-        activeUploadBtn.disabled = true;
-
         reader.onload = function(e) {
-          const img = new Image();
-         
-          img.onload = async function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            const targetDimension = 400;
-            canvas.width = targetDimension;
-            canvas.height = targetDimension;
+          // Open the cropping modal view
+          document.getElementById('cropperOverlayModal').style.display = 'flex';
+          const container = document.getElementById('croppieViewportContainer');
+          container.innerHTML = ''; // Sanitize boundary markup
 
-            let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
+          // Bind Croppie configuration explicitly to build a perfect square viewport
+          activeCroppieInstance = new Croppie(container, {
+            viewport: { width: 220, height: 220, type: 'square' },
+            boundary: { width: 300, height: 300 },
+            enableOrientation: true
+          });
 
-            if (img.width > img.height) {
-              sourceWidth = img.height;
-              sourceX = (img.width - img.height) / 2;
-            } else if (img.height > img.width) {
-              sourceHeight = img.width;
-              sourceY = (img.height - img.width) / 2;
-            }
-
-            ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, targetDimension, targetDimension);
-            const croppedBase64String = canvas.toDataURL('image/jpeg', 0.85);
-
-            try {
-              const remoteStorageUrl = await uploadBase64ToStorage(croppedBase64String);
-              if (remoteStorageUrl) {
-                const { error: dbUpdateError } = await supabaseClient
-                  .from('profiles')
-                  .update({ avatar_url: remoteStorageUrl })
-                  .eq('id', currentUser.id);
-                if (dbUpdateError) throw dbUpdateError;
-
-                currentUser.photo = remoteStorageUrl;
-                document.getElementById('profAvatar').src = remoteStorageUrl;
-                document.getElementById('composerAvatar').src = remoteStorageUrl;
-                document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
-                
-                activeUploadBtn.textContent = "Change Photo";
-              } else {
-                activeUploadBtn.textContent = "Upload Failed";
-              }
-            } catch (err) {
-              console.error("Avatar update execution failed:", err);
-              activeUploadBtn.textContent = "Upload Failed";
-            } finally {
-              activeUploadBtn.disabled = false;
-              activeFileSelector.value = ''; // Reset file input selection so the same image can be chosen again if needed
-            }
-          };
-          img.src = e.target.result;
+          // Feed user raw image data into the view engine
+          activeCroppieInstance.bind({
+            url: e.target.result
+          });
         };
 
         reader.readAsDataURL(selectedFile);
       });
+
+      // Handle Cancel Trigger
+      document.getElementById('cancelCropBtn').onclick = function() {
+        document.getElementById('cropperOverlayModal').style.display = 'none';
+        if (activeCroppieInstance) activeCroppieInstance.destroy();
+        activeFileSelector.value = ''; // Evict internal cache
+      };
+
+      // Handle Apply Crop & Save Pipeline
+      document.getElementById('saveCropBtn').onclick = async function() {
+        if (!activeCroppieInstance) return;
+
+        activeUploadBtn.textContent = "Processing...";
+        activeUploadBtn.disabled = true;
+        document.getElementById('cropperOverlayModal').style.display = 'none';
+
+        try {
+          // Extract the cropped canvas area out as a high-quality JPEG base64 string
+          const croppedBase64 = await activeCroppieInstance.result({
+            type: 'base64',
+            size: { width: 400, height: 400 },
+            format: 'jpeg',
+            quality: 0.9
+          });
+
+          activeCroppieInstance.destroy();
+
+          // Push to Cloudinary
+          const remoteStorageUrl = await uploadBase64ToCloudinary(croppedBase64);
+          
+          if (remoteStorageUrl) {
+            // Write back down to Supabase Profile database record
+            const { error: dbUpdateError } = await supabaseClient
+              .from('profiles')
+              .update({ avatar_url: remoteStorageUrl })
+              .eq('id', currentUser.id);
+            
+            if (dbUpdateError) throw dbUpdateError;
+
+            // Immediately rewrite global state nodes and live app elements
+            currentUser.photo = remoteStorageUrl;
+            document.getElementById('profAvatar').src = remoteStorageUrl;
+            document.getElementById('composerAvatar').src = remoteStorageUrl;
+            document.getElementById('profileComposerAvatar').src = remoteStorageUrl;
+            
+            // Re-sync feeds to dynamically reflect changes without a hard refresh
+            loadFeedStream();
+            
+            activeUploadBtn.textContent = "Change Photo";
+          } else {
+            activeUploadBtn.textContent = "Upload Failed";
+          }
+        } catch (err) {
+          console.error("Avatar operation pipeline fault:", err);
+          activeUploadBtn.textContent = "Upload Failed";
+        } finally {
+          activeUploadBtn.disabled = false;
+          activeFileSelector.value = ''; // Clean the input node
+        }
+      };
     }
 
     function destroyCroppieModal() {
